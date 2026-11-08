@@ -97,9 +97,9 @@ These checkmarks record completed design decisions. Feature implementation and l
 
 ### Phase 2 — Design the additive database upgrade
 
-Owner: Codex | Status: Complete — ready for review | Next action: Review the SQL, then begin Phase 3 access policies and transactional activity capture.
+Owner: Codex | Status: Complete — confirmed present in Supabase | Next action: Phase 3 implementation and verification.
 
-Deliverables: [clean-install schema](supabase/schema.sql), [CLI-generated additive migration](supabase/migrations/20261108193633_add_workspace_enhancements.sql), [read-only preflight](supabase/preflight.sql), and [upgrade/test guide](docs/database-upgrade.md). The hosted project was inspected read-only. PostgreSQL 17.5 passed 45 assertions for each of the clean-install and upgrade paths; catalog parity and repeat application were verified. New tables have RLS enabled with API privileges closed until Phase 3. Hosted application, Supabase advisors, and real guest-client checks remain pending.
+Deliverables: [clean-install schema](supabase/schema.sql), [CLI-generated additive migration](supabase/migrations/20261108193633_add_workspace_enhancements.sql), [read-only preflight](supabase/preflight.sql), and [upgrade/test guide](docs/database-upgrade.md). PostgreSQL 17.5 passed 45 assertions for each of the clean-install and upgrade paths; catalog parity and repeat application were verified. Read-only hosted inspection subsequently confirmed the Phase 2 tables are installed with RLS enabled. New guest access remains closed until Phase 3 is applied; its hosted Data API and advisor verification are still pending.
 
 #### 2.1 Prepare a safe upgrade path
 
@@ -165,16 +165,18 @@ All guest-owned records use `user_id uuid not null` and server-generated timesta
 
 ### Phase 3 — Secure relationships and record activity
 
-Owner: ___ | Status: Not started | Next action: Add policies, grants, transactional functions, and activity triggers.
+Owner: Codex | Status: Implemented locally — hosted verification pending | Next action: Review/apply the Phase 3 migration, then verify real guest clients and rerun advisors.
+
+Deliverables: [Phase 3 migration](supabase/migrations/20261108195255_secure_workspace_mutations.sql), updated [full schema](supabase/schema.sql), [read-only installation checks](supabase/verify-phase3.sql), and [security/RPC guide](docs/database-security.md). Both fresh and upgraded local PostgreSQL databases passed 45 schema checks plus 61 access/mutation checks, with catalog parity and repeat application. Read-only hosted inspection confirmed Phase 2 is installed; Phase 3 remains a local SQL deliverable until applied. Frontend service wiring follows in Phase 4.
 
 #### 3.1 Add explicit Data API grants and RLS
 
-- [ ] Enable RLS on all six new tables.
-- [ ] Keep unauthenticated `anon` clients without table or mutation-function access.
-- [ ] Give `authenticated` guests only the table/column privileges required by supported operations.
-- [ ] Use `(select auth.uid()) = user_id` for row ownership and retain SELECT policies for rows that can be updated.
-- [ ] Use both `USING` and `WITH CHECK` on UPDATE policies.
-- [ ] Require task ownership on child records and reject ownership changes through column privileges and policies.
+- [x] Enable RLS on all six new tables.
+- [x] Keep unauthenticated `anon` clients without table or mutation-function access.
+- [x] Give `authenticated` guests only the table/column privileges required by supported operations.
+- [x] Use `(select auth.uid()) = user_id` for row ownership and retain SELECT policies for rows that can be updated.
+- [x] Use both `USING` and `WITH CHECK` on UPDATE policies.
+- [x] Require task ownership on child records and reject ownership changes through column privileges and policies.
 - [ ] Test access through the Data API; table grants and RLS must both work.
 
 | Table | Permitted guest operations |
@@ -186,30 +188,30 @@ Owner: ___ | Status: Not started | Next action: Add policies, grants, transactio
 
 #### 3.2 Save task changes atomically
 
-- [ ] Add a typed Supabase RPC for creating/updating a task and its assignment/label sets in one database transaction.
-- [ ] Use `SECURITY INVOKER` for this application function so ordinary grants and RLS remain active.
-- [ ] Resolve the owner from `auth.uid()` and reject unauthenticated requests; never trust a supplied owner or actor ID.
-- [ ] Lock the task row during an update, validate all incoming IDs, and apply only actual relationship differences.
-- [ ] Treat an omitted relationship array as unchanged and an empty array as remove all; reject or normalize duplicate IDs.
-- [ ] Return the saved task and complete assignment/label data after commit.
-- [ ] Reject the entire save if any field, member, label, relationship, or event write fails.
-- [ ] Use the server-returned `updated_at` as an expected-change token for edits; reject stale edits and retain the local draft for reconciliation.
-- [ ] Ensure assignment/tag-only updates also touch the parent timestamp without generating a fictitious field-edit event.
-- [ ] Route create/edit/assignment/tag saves through this RPC. Keep status-only drag saves compatible with the same locking and activity rules.
-- [ ] Keep member/label archive and assignment operations consistent under concurrent requests.
+- [x] Add the SQL RPC contract for saving tasks and relation sets atomically; generated TypeScript and service wiring follow in Phase 4.
+- [x] Use `SECURITY INVOKER` for this application function so ordinary grants and RLS remain active.
+- [x] Resolve the owner from `auth.uid()` and reject unauthenticated requests; never trust a supplied owner or actor ID.
+- [x] Lock the task row during an update, validate all incoming IDs, and apply only actual relationship differences.
+- [x] Treat an omitted relationship array as unchanged and an empty array as remove all; reject or normalize duplicate IDs.
+- [x] Return the saved task and complete assignment/label data after commit.
+- [x] Reject the entire save if any field, member, label, relationship, or event write fails.
+- [x] Reject stale edits using the exact server-returned `updated_at` token; frontend draft retention and reconciliation follow in Phase 4.
+- [x] Ensure assignment/tag-only updates also touch the parent timestamp without generating a fictitious field-edit event.
+- [ ] Route frontend create/edit/assignment/tag saves through this RPC in Phase 4. Existing direct status writes already record history.
+- [x] Use task-first row locks and locked member/label active-state checks; parallel HTTP integration testing remains in Phase 11.
 
 #### 3.3 Capture history at the database layer
 
-- [ ] Define event types for creation, status changes, field edits, assignee additions/removals, and label additions/removals.
-- [ ] Add task and join-table triggers so writes through either the UI or a permitted direct client produce corresponding activity.
-- [ ] Write activity in the same transaction as its source mutation; a failed save must leave neither partial data nor a success event.
-- [ ] Keep the activity table read-only to guests. An ordinary invoker trigger cannot append into a table that rejects guest inserts.
-- [ ] For this narrow append operation, use a reviewed `SECURITY DEFINER` trigger function in a non-exposed `private` schema, with an empty `search_path` and fully qualified references.
-- [ ] Restrict the function to the intended trigger tables/events, validate the authenticated owner against the source row, and derive actor, payload, and timestamps from trusted database context.
-- [ ] Revoke direct function execution from public API roles; do not expose a client-callable “insert activity” endpoint or accept arbitrary event payloads from the UI.
-- [ ] Define cascade cleanup behavior explicitly: task/auth-user deletion must not fail because a child trigger tries to append history to a disappearing task.
-- [ ] Record only meaningful differences; no-op saves and timestamp-only updates must not duplicate events.
-- [ ] Snapshot member/label names and old/new values in event payloads so later renaming or archival does not rewrite history.
+- [x] Define event types for creation, status changes, field edits, assignee additions/removals, and label additions/removals.
+- [x] Add task and join-table triggers so writes through either the UI or a permitted direct client produce corresponding activity.
+- [x] Write activity in the same transaction as its source mutation; a failed save must leave neither partial data nor a success event.
+- [x] Keep the activity table read-only to guests. An ordinary invoker trigger cannot append into a table that rejects guest inserts.
+- [x] For this narrow append operation, use a reviewed `SECURITY DEFINER` trigger function in a non-exposed `private` schema, with an empty `search_path` and fully qualified references.
+- [x] Restrict the function to the intended trigger tables/events, validate the authenticated owner against the source row, and derive actor, payload, and timestamps from trusted database context.
+- [x] Revoke direct function execution from public API roles; do not expose a client-callable “insert activity” endpoint or accept arbitrary event payloads from the UI.
+- [x] Define cascade cleanup behavior explicitly: task/auth-user deletion must not fail because a child trigger tries to append history to a disappearing task.
+- [x] Record only meaningful differences; no-op saves and timestamp-only updates must not duplicate events.
+- [x] Snapshot member/label names and old/new values in event payloads so later renaming or archival does not rewrite history.
 - [ ] Run Supabase security/performance advisors and review privileged functions before accepting this checkpoint.
 
 **Done when:** Guest clients can perform their allowed operations, cross-owner references are rejected, task saves are atomic, and history cannot be forged, edited, or deleted directly by guests.

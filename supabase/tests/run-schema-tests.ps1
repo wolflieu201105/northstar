@@ -40,8 +40,8 @@ $schemaPath = Join-Path $workspacePath 'supabase\schema.sql'
 $baselinePath = Join-Path $PSScriptRoot 'fixtures\baseline.sql'
 $bootstrapPath = Join-Path $PSScriptRoot 'fixtures\bootstrap.sql'
 $existingDataPath = Join-Path $PSScriptRoot 'fixtures\existing-tasks.sql'
-$migrationFiles = @(Get-ChildItem -LiteralPath (Join-Path $workspacePath 'supabase\migrations') -Filter '*_add_workspace_enhancements.sql')
-if ($migrationFiles.Count -ne 1) { throw 'Expected exactly one workspace-enhancement migration.' }
+$migrationFiles = @(Get-ChildItem -LiteralPath (Join-Path $workspacePath 'supabase\migrations') -Filter '*.sql' | Sort-Object Name)
+if ($migrationFiles.Count -ne 2) { throw 'Expected the Phase 2 and Phase 3 migrations.' }
 
 $marker = '-- Phase 2: additive workspace data model.'
 $schemaText = Get-Content -Raw -Encoding UTF8 -LiteralPath $schemaPath
@@ -49,8 +49,16 @@ $migrationText = Get-Content -Raw -Encoding UTF8 -LiteralPath $migrationFiles[0]
 $schemaMarker = $schemaText.IndexOf($marker)
 $migrationMarker = $migrationText.IndexOf($marker)
 if ($schemaMarker -lt 0 -or $migrationMarker -lt 0) { throw 'Missing enhancement SQL marker.' }
-if ($schemaText.Substring($schemaMarker).Trim() -cne $migrationText.Substring($migrationMarker).Trim()) {
-  throw 'Clean-install and upgrade enhancement SQL differ.'
+$phase3Marker = '-- Phase 3: ownership policies, atomic task saves, and trusted activity capture.'
+$phase3Start = $schemaText.IndexOf($phase3Marker)
+$phase3Text = Get-Content -Raw -Encoding UTF8 -LiteralPath $migrationFiles[1].FullName
+$phase3MigrationStart = $phase3Text.IndexOf($phase3Marker)
+if ($phase3Start -lt 0 -or $phase3MigrationStart -lt 0) { throw 'Missing Phase 3 SQL marker.' }
+if (($schemaText.Substring($schemaMarker, $phase3Start - $schemaMarker).Trim() + "`n`ncommit;") -cne $migrationText.Substring($migrationMarker).Trim()) {
+  throw 'Phase 2 clean-install and upgrade SQL differ.'
+}
+if ($schemaText.Substring($phase3Start).Trim() -cne $phase3Text.Substring($phase3MigrationStart).Trim()) {
+  throw 'Phase 3 clean-install and upgrade SQL differ.'
 }
 
 $testRunId = [guid]::NewGuid().ToString('N')
@@ -76,15 +84,24 @@ try {
     else {
       $null = Invoke-SchemaSql -Database $testDatabase -File $baselinePath
       $null = Invoke-SchemaSql -Database $testDatabase -File $existingDataPath
-      $null = Invoke-SchemaSql -Database $testDatabase -File $migrationFiles[0].FullName
-      $null = Invoke-SchemaSql -Database $testDatabase -File $migrationFiles[0].FullName
+      foreach ($migrationFile in $migrationFiles) {
+        $null = Invoke-SchemaSql -Database $testDatabase -File $migrationFile.FullName
+      }
+      foreach ($migrationFile in $migrationFiles) {
+        $null = Invoke-SchemaSql -Database $testDatabase -File $migrationFile.FullName
+      }
     }
 
     $fingerprints[$variant] = Invoke-SchemaSql -Database $testDatabase -File (Join-Path $PSScriptRoot 'schema-fingerprint.sql')
+    $null = Invoke-SchemaSql -Database $testDatabase -File (Join-Path $workspacePath 'supabase\verify-phase3.sql')
     $checkOutput = Invoke-SchemaSql -Database $testDatabase -File (Join-Path $PSScriptRoot 'schema.sql')
     $summary = ($checkOutput -split "`n" | Where-Object { $_ -match '^\d+ schema checks passed$' })
     if (-not $summary) { throw "No successful test summary for $variant." }
     Write-Output "${variant}: $summary; repeat application preserved existing tasks."
+    $accessOutput = Invoke-SchemaSql -Database $testDatabase -File (Join-Path $PSScriptRoot 'access-and-mutations.sql')
+    $accessSummary = ($accessOutput -split "`n" | Where-Object { $_ -match '^\d+ access and mutation checks passed$' })
+    if (-not $accessSummary) { throw "No successful access/mutation summary for $variant." }
+    Write-Output "${variant}: $accessSummary."
   }
 
   if ($fingerprints['fresh'] -cne $fingerprints['upgrade']) {

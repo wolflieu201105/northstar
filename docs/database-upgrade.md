@@ -2,6 +2,8 @@
 
 This checkpoint prepares the data model for [path-updates.md](../path-updates.md). The SQL has been tested with local synthetic data and is staged for review. Phase 3 will add the new guest policies/grants, atomic task-save RPC, and trusted activity capture before the enhancements are connected to the app.
 
+**Phase 3 update:** The complete `schema.sql` now includes access policies and history capture as well. The original Phase 2 migration remains the closed-access data-model step. See [database-security.md](database-security.md) for the next migration, its RPC contract, and the hosted verification still required. The local runner now applies both migrations and adds the Phase 3 access/mutation suite.
+
 ## Files and installation paths
 
 | File | Purpose |

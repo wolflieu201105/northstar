@@ -29,6 +29,12 @@ grant execute on function auth.uid() to anon, authenticated;
 
 create schema test;
 
+-- Mirror the pre-existing helper ACL so the conditional hardening is exercised.
+create function public.rls_auto_enable() returns event_trigger
+language plpgsql security definer set search_path = pg_catalog
+as $$ begin return; end; $$;
+grant execute on function public.rls_auto_enable() to anon, authenticated;
+
 insert into auth.users (id) values
   ('11111111-1111-4111-8111-111111111111'),
   ('22222222-2222-4222-8222-222222222222'),

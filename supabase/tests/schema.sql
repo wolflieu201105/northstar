@@ -56,7 +56,12 @@ select test.assert_true(
 );
 
 select test.assert_true(
-  not exists (
+  case when to_regprocedure('public.save_task(uuid,jsonb,uuid[],uuid[],timestamp with time zone)') is not null
+  then has_table_privilege('authenticated', 'public.team_members', 'SELECT')
+    and has_table_privilege('authenticated', 'public.task_activity', 'SELECT')
+    and not has_table_privilege('authenticated', 'public.task_activity', 'INSERT,UPDATE,DELETE')
+    and not has_table_privilege('anon', 'public.team_members', 'SELECT')
+  else not exists (
     select 1
     from unnest(array['anon', 'authenticated']) role_name
     cross join unnest(array[
@@ -67,8 +72,8 @@ select test.assert_true(
        or (privilege <> 'DELETE' and has_any_column_privilege(
          role_name, 'public.' || table_name, privilege
        ))
-  ),
-  'API roles have no new-table privileges before Phase 3'
+  ) end,
+  'API table privileges match the installed checkpoint'
 );
 
 select test.assert_true(
