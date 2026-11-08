@@ -1,0 +1,185 @@
+# Northstar Task Board
+
+Northstar is a responsive Kanban task manager built for frictionless guest use. A visitor is signed in anonymously through Supabase, receives a private workspace, and can create and move persistent tasks without completing a registration form.
+
+The interface uses a restrained black-and-green visual system and supports desktop and narrow-screen workflows.
+
+## Project status
+
+- Application: implemented and tested locally
+- Live demo: pending deployment
+- Source repository: pending publication
+
+## Features
+
+- Automatic anonymous guest sessions that persist in the browser
+- Private task storage protected by Supabase Row Level Security
+- Four workflow columns: To Do, In Progress, In Review, and Done
+- Create, edit, and delete task flows
+- Drag-and-drop status changes with optimistic updates and rollback on failure
+- Keyboard/mobile status selector as an alternative to dragging
+- Descriptions, priority levels, and calendar due dates
+- Overdue, due-today, and upcoming indicators using local calendar dates
+- Case-insensitive search and priority filtering
+- Total, completed, and overdue board summaries
+- Loading, empty, configuration, error, retry, and save states
+- Responsive horizontal board navigation on narrow screens
+- Accessible labels, focus states, dialog behavior, and reduced-motion support
+- Lazy-loaded board and task form bundles
+
+## Technology
+
+- React 19 and TypeScript
+- Vite
+- Supabase Auth, Postgres, and Row Level Security
+- dnd kit React
+- Lucide icons
+- Vitest and Testing Library
+- ESLint
+
+## Security model
+
+Each browser receives a Supabase anonymous user. Anonymous users have unique user IDs and use the `authenticated` Postgres role.
+
+The `tasks.user_id` column records ownership. Every RLS policy checks `(select auth.uid()) = user_id`, so an authenticated guest can only read or modify their own rows. The schema also:
+
+- Gives no task-table privileges to unauthenticated `anon` clients
+- Grants only the operations and columns used by the application
+- Prevents clients from changing ownership or timestamps
+- Deletes a guest's tasks if that auth user is deleted
+- Indexes the ownership-filtered task query
+- Uses a non-privileged trigger for `updated_at`
+
+The browser uses only a publishable Supabase key. Never place a secret key, service-role key, database password, or access token in a `VITE_*` variable.
+
+## Prerequisites
+
+- Node.js 22.12 or newer; Node.js 24 is used by CI
+- npm 11
+- A Supabase project
+
+## Supabase setup
+
+1. Create or open a Supabase project.
+2. In Authentication settings, enable anonymous sign-ins.
+3. Open the SQL Editor.
+4. Run the full contents of [`supabase/schema.sql`](supabase/schema.sql).
+5. Copy the project URL and a browser-safe publishable key.
+
+The SQL file contains the table, constraints, index, trigger, explicit Data API grants, and all RLS policies required by the application.
+
+## Local setup
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Copy the environment template:
+
+```bash
+cp .env.example .env.local
+```
+
+On PowerShell:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+Set the following values in `.env.local`:
+
+```dotenv
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your_key_here
+```
+
+Legacy projects may use `VITE_SUPABASE_ANON_KEY` instead of the publishable-key variable, but a current publishable key is preferred.
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+Vite normally serves the app at `http://localhost:5173`.
+
+## Verification commands
+
+```bash
+npm run lint
+npm test
+npm run build
+npm run preview
+```
+
+The automated suite covers due-date rules, filtering, summaries, task-input normalization, form validation, task mutations, optimistic movement, and rollback behavior.
+
+## Manual security verification
+
+Use two independent browser profiles so Supabase creates Guest A and Guest B.
+
+1. Create a different task as each guest.
+2. Confirm neither guest sees the other's task.
+3. Refresh both profiles and confirm each task persists.
+4. Move tasks between columns and confirm their statuses persist.
+5. Clear one profile's browser data and confirm it receives a new workspace.
+
+Clearing browser storage, signing out, or moving to another device loses access to an anonymous identity. Account recovery would require linking a permanent identity, which is outside this version's scope.
+
+## Deploying to Vercel
+
+The repository works with Vercel's Vite framework detection and requires no custom deployment configuration.
+
+1. Push the repository to GitHub.
+2. Import the repository into Vercel.
+3. Confirm the build command is `npm run build` and the output directory is `dist`.
+4. Add both public variables in Project Settings → Environment Variables:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_PUBLISHABLE_KEY`
+5. Apply them to Production and Preview as appropriate.
+6. Deploy, then test create, move, refresh, and guest isolation on the deployed URL.
+
+`VITE_*` variables are compiled into the browser bundle and are therefore public configuration. Vercel treats public-prefixed variables as Config values; do not use them for privileged credentials. Environment-variable changes require a new deployment.
+
+The included [GitHub Actions workflow](.github/workflows/ci.yml) runs `npm ci`, linting, tests, and the production build. With Vercel's Git integration, use the workflow as a required check while Vercel handles preview and production deployments.
+
+## Project structure
+
+```text
+src/
+  components/       Board, columns, cards, forms, and application states
+  hooks/            Guest-session and task-state coordination
+  lib/              Supabase setup and task utilities
+  services/         Supabase task queries and mutations
+  styles/           Responsive black-and-green visual system
+  test/             Shared test setup and fixtures
+  types/            Task domain types and status metadata
+supabase/
+  schema.sql         Reproducible schema, grants, trigger, and RLS policies
+```
+
+## Design decisions
+
+- Guest-first authentication removes signup friction while retaining per-user ownership.
+- RLS is the security boundary; client-side filtering is only a usability aid.
+- Status changes save immediately after a drop and roll back if persistence fails.
+- Manual ordering within a column is intentionally excluded; tasks use stable creation-time ordering.
+- Search and summary values are derived from loaded state, so filtering never mutates hidden tasks.
+- Due dates are parsed as local calendar dates to avoid timezone-related day shifts.
+
+## Known limitations
+
+- Anonymous accounts cannot be recovered after their browser session is lost.
+- The current version has one board per guest and no shared collaboration model.
+- Dragging changes task status but does not persist arbitrary ordering within a column.
+- Cross-tab realtime synchronization is not included.
+
+## Future improvements
+
+- Link guest workspaces to permanent accounts
+- Add projects, invitations, and collaborative access policies
+- Add labels, assignees, comments, and activity history
+- Add persistent within-column ordering
+- Add end-to-end browser tests against a disposable Supabase project
