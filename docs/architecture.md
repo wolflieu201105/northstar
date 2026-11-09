@@ -25,6 +25,8 @@ The app shell owns orchestration; feature components own their interface and beh
 
 The generated Supabase schema remains one file at `src/shared/types/database.ts`. Regenerate that file when the schema changes. Domain-specific row validation lives with its feature; basic record/text predicates are shared.
 
+Phases 12–13 prepare the [group database and checked APIs](shared-groups-migration.md) without changing the hosted database or this private frontend. SQL sources are split under `supabase/sql/groups/`; `supabase/scripts/build-schema.ps1` compiles the complete SQL Editor artifacts. Generate the group client types and connect the frontend in Phases 14–16; current generated types and owner-only services are not group-aware.
+
 ## Smaller component boundaries
 
 - `App.tsx` is now 23 lines; the original 221-line component is divided into a controller, shell, views, dialogs, and `BoardPage`.

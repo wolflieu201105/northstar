@@ -41,7 +41,7 @@ Local UI/store tests cover event snapshots and old/new fields, unknown contracts
 
 The existing native PostgreSQL suite was rerun on the dedicated local test cluster. Both fresh installation and upgrade passed 45 schema checks and 61 access/mutation checks, with catalog parity and repeat-application preservation. These checks include no-op event suppression, full rollback after a synthetic history-write failure, historical name snapshots, forbidden history writes, task deletion, and auth-user cleanup without orphaned records. Disposable databases were removed and the owned test cluster was stopped.
 
-Read-only hosted metadata checks confirmed RLS, owner/actor constraints, authenticated SELECT with no activity write privileges, no unauthenticated read access, enabled capture triggers, and a private capture helper that API roles cannot execute directly. Agent verification did not write hosted rows or change the hosted schema. Real Supabase JWT/Data API isolation remains in Phase 11; remaining browser checks are distinguished below.
+Read-only hosted metadata checks confirmed RLS, owner/actor constraints, authenticated SELECT with no activity write privileges, no unauthenticated read access, enabled capture triggers, and a private capture helper that API roles cannot execute directly. Agent verification did not write hosted rows or change the hosted schema. Real Supabase JWT/Data API isolation remains in Phase 18; remaining browser checks are distinguished below.
 
 Local app validation passes: `npm test -- --maxWorkers=2` (112 tests across 26 files), ESLint, and the TypeScript/production build. Activity code and styles remain in their feature folders; the timeline is loaded inside the task-detail bundle.
 

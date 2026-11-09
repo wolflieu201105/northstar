@@ -1,3 +1,7 @@
+# Database transition note
+
+The source/services documented below still target the private-workspace database. The [new group foundation](shared-groups-migration.md) is prepared and tested locally; its APIs are implemented in Phase 13, while generated client types and frontend integration follow in Phases 14–16. Old queries/types do not describe that new schema.
+
 # Typed data services and state — Phase 4
 
 Phase 4 connects the installed database contract to the application data layer. The existing create/edit/drag actions now use `save_task`. New Team, Labels, and task-detail screens follow in Phase 5 and the feature-specific checkpoints.

@@ -28,7 +28,7 @@ Run `npm run dev` and use Vite's Local URL.
 
 Automated UI/store tests cover create retry identity, duplicate submissions, profile editing, archive/restore, assignment retention, canonical card updates, pending navigation guards, invalid names, searchable selections, task creation with zero/multiple assignees, and accessible overflow names. Transport tests use the real Supabase query builder with mocked responses to verify owner filters and request bodies.
 
-Read-only hosted metadata checks confirmed the member name/color constraints, RLS on member/assignment tables, intended authenticated grants, and absence of unauthenticated SELECT access. No hosted records were written during this checkpoint. Live persistence, assignment activity, responsive appearance, and actual keyboard/touch interactions remain manual checks; the two-guest API isolation checks remain in Phase 11.
+Read-only hosted metadata checks confirmed the member name/color constraints, RLS on member/assignment tables, intended authenticated grants, and absence of unauthenticated SELECT access. No hosted records were written during this checkpoint. Live persistence, assignment activity, responsive appearance, and actual keyboard/touch interactions remain manual checks; the two-guest API isolation checks remain in Phase 18.
 
 Local validation passes: 52 tests across 13 files, ESLint, TypeScript, and the production build. The Team management page is loaded as a separate bundle.
 

@@ -1,12 +1,16 @@
 # Task Manager Enhancements — Step-by-Step Build Plan
 
-Extend the existing Northstar task board with team members, multiple assignees, comments, activity history, and custom labels. Complete the existing due-date, filtering, and summary features as part of the same update. This document is a work plan: check items off as they are implemented and verified. It does not describe already completed enhancements.
+Extend Northstar into a task board that multiple users share through groups. Preserve the team/label, comment, activity, filter, due-date, and summary work from Phases 1–10, then add real accounts, guest upgrades, group membership, accepted invitations, and live collaboration. Check items off as they are implemented and verified; recorded completion is not a claim that later shared-group behavior already exists.
 
 Keep [path.md](path.md) as the original build plan and [README.md](README.md) as the description of the working application. This update plan follows the same roadmap, checklist, acceptance criteria, time-budget, and reference structure.
 
+**November 9 fresh-start correction:** The user approved discarding existing application data. Phase 12 therefore supplies a clean group schema and a destructive reset, without importing old tasks or placeholder members. Guest registration must still preserve work created afterward. No hosted reset has been performed.
+
+**November 9 scope update:** The user confirmed email/password accounts, unique usernames for inviting registered users or guests, and shared editing/invitations for all active group members. See the [accepted collaboration design](docs/shared-groups-design.md). Phases 11–13 now provide the design and locally tested complete group backend. SQL setup is ready; Phase 14 account/frontend work is next. The previous final verification/release phases move from 11/12 to 18/19. [update_path.md](update_path.md) links here as the current update-path entry point.
+
 ## 1. High-level roadmap
 
-Follow this order. Finish each phase's **Done when** check before moving on. Stop after each numbered phase so the result can be reviewed before the next checkpoint. The seven requested feature groups are in scope; do not silently drop one to meet a time estimate.
+Follow this order. Finish each phase's **Done when** check before moving on. Stop after each numbered phase so the result can be reviewed before the next checkpoint. The seven original feature groups and the shared-group update are in scope; do not silently drop one to meet a time estimate.
 
 | Phase | Main idea | Result |
 | --- | --- | --- |
@@ -20,12 +24,19 @@ Follow this order. Finish each phase's **Done when** check before moving on. Sto
 | 8 | Add persistent task comments | Write and read chronological comments with timestamps. |
 | 9 | Display the task activity timeline | Show reliable creation, status, edit, assignment, and label events. |
 | 10 | Complete filters, due dates, and summaries | Combine search, priority, assignee, and label filters with clear counts. |
-| 11 | Verify security and the complete experience | Test migration safety, isolation, failures, responsiveness, and regressions. |
-| 12 | Update documentation and release | Document the upgrade, deploy the tested version, and update submission materials. |
+| 11 | Define accounts and shared-group behavior | Confirm identity, collaboration permissions, invitations, and data preservation. |
+| 12 | Add profiles, groups, and reset SQL | Introduce the clean group schema and intentionally discard old application data. |
+| 13 | Secure group access and mutations | Enforce membership, invitation acceptance, real actors, and atomic operations. |
+| 14 | Build accounts and guest registration | Sign in, register the current guest without losing its identity, and recover sessions. |
+| 15 | Build groups, invitations, and members | Create/switch groups, invite by username/ID, accept requests, and manage membership. |
+| 16 | Scope task features to the active group | Use real assignees, group-specific data/state, named authors, and protected switching. |
+| 17 | Synchronize shared work | Reflect committed changes across users, reconcile conflicts, and revoke stale access. |
+| 18 | Verify security and the complete experience | Test multi-user membership, migration safety, isolation, failures, and regressions. |
+| 19 | Update documentation and release | Document the shared-group upgrade, deploy the tested version, and update submission materials. |
 
-**Stack:** Keep React + TypeScript + Vite, Supabase JS, dnd kit React, plain CSS, Vitest, Testing Library, and the current CI workflow. Reuse the existing client and guest authentication. No separate backend or avatar upload service is required for this update.
+**Stack:** Keep React + TypeScript + Vite, Supabase JS, dnd kit React, plain CSS, Vitest, Testing Library, and the current CI workflow. Extend the existing Supabase client with native Auth and Realtime. Use database policies/RPCs for group authorization; introduce a small trusted endpoint only if an operation genuinely needs it. Keep credentials in Supabase Auth and service secrets out of Vite. No separate password store or avatar upload service is required.
 
-**Scope:** One private workspace per guest. A team member is a guest-managed profile with a name and optional avatar color, not a separate authenticated collaborator. Multiple profiles can be assigned to one task. Comments are written by the current guest; assigning a profile does not give that person access or make them the comment author. Shared accounts, invitations, email notifications, and account recovery remain future work.
+**Scope:** Real users and guests can belong to multiple groups. Every active group member can work on all tasks and send invitations; membership must be accepted before access or new assignment. The current group owner controls removal of other members, group deletion, and ownership transfer. Unique usernames and account UUIDs identify invitation recipients. Guest registration preserves its Auth UUID and existing work. The old board and manually created profiles may be discarded; each retained/new Auth user starts with a real profile and an empty private group. No fabricated accounts or legacy links are imported. In-app invitations and Supabase's built-in confirmation/recovery email flows are included; group invitation emails, OAuth, and automatic merging into an already-existing account are outside this update.
 
 ### Current baseline
 
@@ -33,13 +44,17 @@ The following items exist in the source and should be retained and regression-te
 
 | Requested feature | Current implementation | Work still needed |
 | --- | --- | --- |
-| Team members and assignees | Not implemented. | Member records, management view, multi-assignment, board avatars. |
-| Task comments | Not implemented. | Separate table, service, composer, chronological detail list. |
-| Task activity log | Not implemented. | Database events, append-only access rules, timeline. |
-| Labels / tags | Not implemented. | Label records, management view, task links, filters. |
-| Due-date indicators | `getDueState`, card indicators, and Done exclusion exist. | Verify boundaries, refresh at local midnight, and retain dates for completed tasks. |
-| Search and filtering | Case-insensitive title/description search and priority filtering exist. | Add assignee and label filters and define how all filters combine. |
-| Board summary / stats | Total, completed, and overdue counts exist. | Explicit whole-board labeling and reliable updates after all new mutations. |
+| Team members and assignees | Local profile CRUD, multiple assignments, and avatars implemented. | Replace manual profiles with accepted real memberships; old data may be reset. |
+| Task comments | Append-only comments, chronological pagination, and retry implemented. | Group-based access and real author names for comments created in the new schema. |
+| Task activity log | Database events, before/after details, relative time, and pagination implemented. | Group authorization and real actor snapshots; old stored history may be reset. |
+| Labels / tags | Label management, task links/chips, and filters implemented. | Group scope and shared edits. |
+| Due-date indicators | Local midnight/resume clock, DST/calendar boundaries, neutral Done dates implemented. | Retain behavior through group/account changes and live edits. |
+| Search and filtering | All four groups, ANY/AND semantics, URL state, and missing-ID handling implemented. | Per-group filter state and real-member options. |
+| Board summary / stats | Whole-board scope, filtered counts, and load/error states implemented. | Active-group scope with multi-user updates. |
+| Identity | Persisted anonymous Supabase session; no sign-in/register UI. | Profiles, unique usernames, email/password login, and same-identity guest registration. |
+| Shared groups | Not implemented; database currently enforces owner-only access. | Group schema, acceptance-based membership, invitation inbox, RLS, and live synchronization. |
+
+Phase 10 baseline: 135 tests in 30 files, ESLint, and the TypeScript/production build passed on November 9, 2026. Its manual browser checks remain open. Earlier phase descriptions record the private-workspace implementation at that time; the Phase 11 design supersedes their future product assumptions without rewriting that history.
 
 ### How to divide the work
 
@@ -99,7 +114,7 @@ These checkmarks record completed design decisions. Feature implementation and l
 
 Owner: Codex | Status: Complete — confirmed present in Supabase | Next action: Phase 3 implementation and verification.
 
-Deliverables: [clean-install schema](supabase/schema.sql), [CLI-generated additive migration](supabase/migrations/20261108193633_add_workspace_enhancements.sql), [read-only preflight](supabase/preflight.sql), and [upgrade/test guide](docs/database-upgrade.md). PostgreSQL 17.5 passed 45 assertions for each of the clean-install and upgrade paths; catalog parity and repeat application were verified. Read-only hosted inspection subsequently confirmed the Phase 2 tables are installed with RLS enabled. New guest access remains closed until Phase 3 is applied; its hosted Data API and advisor verification are still pending.
+Deliverables: [clean-install schema](supabase/schema.sql), `20261108193633_add_workspace_enhancements.sql` (retired), [read-only preflight](supabase/preflight.sql), and [upgrade/test guide](docs/database-upgrade.md). PostgreSQL 17.5 passed 45 assertions for each of the clean-install and upgrade paths; catalog parity and repeat application were verified. Read-only hosted inspection subsequently confirmed the Phase 2 tables are installed with RLS enabled. New guest access remains closed until Phase 3 is applied; its hosted Data API and advisor verification are still pending.
 
 #### 2.1 Prepare a safe upgrade path
 
@@ -167,7 +182,7 @@ All guest-owned records use `user_id uuid not null` and server-generated timesta
 
 Owner: Codex | Status: Installed — real guest API verification pending | Next action: Retain the two-guest Data API checks in the verification checkpoint.
 
-Deliverables: [Phase 3 migration](supabase/migrations/20261108195255_secure_workspace_mutations.sql), updated [full schema](supabase/schema.sql), [read-only installation checks](supabase/verify-phase3.sql), and [security/RPC guide](docs/database-security.md). Both fresh and upgraded local PostgreSQL databases passed 45 schema checks plus 61 access/mutation checks, with catalog parity and repeat application. Read-only hosted inspection in Phase 4 confirmed the installed RPC and its expected execution permissions; hosted advisors were refreshed. Frontend services are connected in Phase 4. Two-real-guest Data API checks remain pending.
+Deliverables: `20261108195255_secure_workspace_mutations.sql` (retired), updated [full schema](supabase/schema.sql), [read-only installation checks](supabase/verify-phase3.sql), and [security/RPC guide](docs/database-security.md). Both fresh and upgraded local PostgreSQL databases passed 45 schema checks plus 61 access/mutation checks, with catalog parity and repeat application. Read-only hosted inspection in Phase 4 confirmed the installed RPC and its expected execution permissions; hosted advisors were refreshed. Frontend services are connected in Phase 4. Two-real-guest Data API checks remain pending.
 
 #### 3.1 Add explicit Data API grants and RLS
 
@@ -198,7 +213,7 @@ Deliverables: [Phase 3 migration](supabase/migrations/20261108195255_secure_work
 - [x] Reject stale edits using the exact server-returned `updated_at` token; frontend draft retention and reconciliation follow in Phase 4.
 - [x] Ensure assignment/tag-only updates also touch the parent timestamp without generating a fictitious field-edit event.
 - [x] Route create/edit/status and relation-set saves through the typed RPC service in Phase 4; new assignment/tag controls follow in the UI phases.
-- [x] Use task-first row locks and locked member/label active-state checks; parallel HTTP integration testing remains in Phase 11.
+- [x] Use task-first row locks and locked member/label active-state checks; parallel HTTP integration testing remains in Phase 18.
 
 #### 3.3 Capture history at the database layer
 
@@ -291,7 +306,7 @@ Deliverable: [Navigation and task-detail guide](docs/navigation-and-task-details
 
 ### Phase 6 — Build team members and multiple assignees
 
-Owner: Codex | Status: Complete | Next action: Assignment save/refresh/history is user-verified; retain remaining mobile/isolation checks in Phase 11.
+Owner: Codex | Status: Complete | Next action: Assignment save/refresh/history is user-verified; retain remaining mobile/isolation checks in Phase 18.
 
 Deliverable: [Team member and assignee guide](docs/team-members.md). Inline create/edit forms, archive/restore views, assignment counts, board/card avatars, and searchable multi-assignment on creation/edit are implemented. Existing task links survive archival. Hosted constraints and table access were checked read-only; no new SQL or hosted data writes were needed. Live refresh/history and browser interaction checks remain below for this checkpoint.
 
@@ -318,7 +333,7 @@ Deliverable: [Team member and assignee guide](docs/team-members.md). Inline crea
 
 ### Phase 7 — Build custom labels and task tagging
 
-Owner: Codex | Status: Implemented — checkpoint accepted | Next action: Keep live label persistence/activity checks in Phase 11; Phase 8 is ready for review.
+Owner: Codex | Status: Implemented — checkpoint accepted | Next action: Keep live label persistence/activity checks in Phase 18; Phase 8 is ready for review.
 
 Deliverable: [Label and task-tagging guide](docs/labels-and-tags.md). Label create/edit/archive/restore, case-insensitive duplicate recovery with a restore offer, usage counts, creation/detail pickers, and card chips with expandable overflow are implemented. Hosted constraints and table access were checked read-only; no new SQL or hosted data writes were needed. Live refresh/history and browser interaction checks remain manual checkpoint items. Board label filtering remains in Phase 10.
 
@@ -343,9 +358,9 @@ Deliverable: [Label and task-tagging guide](docs/labels-and-tags.md). Label crea
 
 ### Phase 8 — Add persistent task comments
 
-Owner: Codex | Status: Implemented — checkpoint accepted | Next action: Retain live comment persistence/isolation checks in Phase 11; Phase 9 is ready for review.
+Owner: Codex | Status: Implemented — checkpoint accepted | Next action: Retain live comment persistence/isolation checks in Phase 18; Phase 9 is ready for review.
 
-Deliverable: [Task comments guide](docs/task-comments.md). Separate list/composer components, explicit post/page retries, validation, precise chronological ordering, recent-post gaps, reload recovery, and draft/identity isolation are implemented. Hosted table constraints, grants, index, and cascade configuration were checked read-only. No new SQL or hosted comment writes were needed; live browser persistence/deletion and guest API isolation remain manual/Phase 11 checks.
+Deliverable: [Task comments guide](docs/task-comments.md). Separate list/composer components, explicit post/page retries, validation, precise chronological ordering, recent-post gaps, reload recovery, and draft/identity isolation are implemented. Hosted table constraints, grants, index, and cascade configuration were checked read-only. No new SQL or hosted comment writes were needed; live browser persistence/deletion and guest API isolation remain manual/Phase 18 checks.
 
 #### 8.1 Read comments
 
@@ -379,7 +394,7 @@ Deliverable: [Architecture and style guide](docs/architecture.md). Feature folde
 
 Owner: Codex | Status: Implemented — core browser checks passed | Next action: Clock/mobile and longer-history browser checks remain; Phase 10 is the next implementation checkpoint.
 
-Deliverable: [Task activity guide](docs/task-activity.md). Typed summaries and old/new values, saved name snapshots, guest actor labels, safe fallbacks, relative-time updates, manual refresh, and same-cursor page retry are implemented in feature-specific modules. Existing local SQL suites pass fresh/upgrade checks for no-ops, rollback, history protection, task deletion, and auth cleanup. Hosted configuration was checked read-only; no new SQL or hosted data changes were required. Real guest API isolation and browser persistence/interaction remain manual/Phase 11 checks.
+Deliverable: [Task activity guide](docs/task-activity.md). Typed summaries and old/new values, saved name snapshots, guest actor labels, safe fallbacks, relative-time updates, manual refresh, and same-cursor page retry are implemented in feature-specific modules. Existing local SQL suites pass fresh/upgrade checks for no-ops, rollback, history protection, task deletion, and auth cleanup. Hosted configuration was checked read-only; no new SQL or hosted data changes were required. Real guest API isolation and browser persistence/interaction remain manual/Phase 18 checks.
 
 #### 9.1 Define readable event rendering
 
@@ -404,7 +419,7 @@ Deliverable: [Task activity guide](docs/task-activity.md). Typed summaries and o
 - [x] Refetch affected history after field edits, drag status changes, assignment changes, and label changes.
 - [x] Show an explicit baseline message for tasks that existed before history capture was enabled.
 - [x] Confirm a no-op save produces no event, while a failed or rolled-back mutation produces no success event. Native local SQL and client synchronization tests cover these cases.
-- [x] Verify parent-task deletion and auth-user cleanup succeed without orphaned history or trigger errors. Native local SQL covers both paths; real JWT/API verification remains in Phase 11.
+- [x] Verify parent-task deletion and auth-user cleanup succeed without orphaned history or trigger errors. Native local SQL covers both paths; real JWT/API verification remains in Phase 18. Shared-content retention after account deletion is a new Phase 12/13 requirement.
 
 #### 9.3 User-reported browser verification
 
@@ -414,7 +429,7 @@ Confirmed by the user on November 9, 2026:
 - [x] Move task status and edit fields; confirm Activity and View changes show the correct history.
 - [x] Go offline before saving; confirm the draft remains and no success event appears.
 
-Clock/mobile, longer-history pagination/retry, and live cleanup checks remain in the [activity review guide](docs/task-activity.md). Real cross-guest JWT/API isolation remains in Phase 11.
+Clock/mobile, longer-history pagination/retry, and live cleanup checks remain in the [activity review guide](docs/task-activity.md). Real cross-guest/group JWT/API isolation remains in Phase 18.
 
 **Done when:** The timeline reflects committed database changes accurately, survives refresh, and cannot be rewritten through guest access.
 
@@ -466,11 +481,152 @@ Deliverable: [Board filters, dates, and summary review](docs/board-filters.md). 
 
 **Done when:** Combined filters return predictable results, urgency remains correct as time changes, and summary counts are accurate and clearly scoped.
 
-### Phase 11 — Verify security and the complete experience
+### Phase 11 — Define accounts and shared-group behavior
 
-Owner: ___ | Status: Not started | Next action: Add focused tests and exercise two isolated guest clients.
+Owner: Codex | Status: Design complete — ready for schema checkpoint | Next action: Implement Phase 12, then stop for SQL review.
 
-#### 11.1 Test application behavior
+Deliverable: [Accounts and shared-group design](docs/shared-groups-design.md). The user confirmed the two account/permission choices on November 9, 2026. Current code/schema and official Supabase Auth documentation were reviewed. This checkpoint updates the plan only; runtime, schema, hosted Auth configuration, and data are unchanged. Phase 10's 135-test/lint/build results remain the baseline and were not rerun for documentation edits.
+
+#### 11.1 Define identity and collaboration
+
+- [x] Choose email/password accounts and globally unique usernames for invitation lookup, including guests.
+- [x] Define same-UUID guest registration so existing groups, tasks, comments, and invitations survive.
+- [x] Verify Supabase's built-in guest email-verification/password flow; plan callback/recovery handling for the existing client configuration.
+- [x] Let all active group members edit group tasks and send invitations; reserve ownership/deletion and other-member removal for the current owner.
+- [x] Require recipient acceptance before group access or new task assignment; use an in-app inbox that guests can receive.
+- [x] Record the later fresh-start decision: old application data and placeholders may be discarded; guest registration preserves new-schema work.
+- [x] Define data ownership, group switching, account-change behavior, live updates, and migration/release gates.
+- [x] Move final security/experience verification to Phase 18 and documentation/release to Phase 19.
+
+**Done when:** The account, group, invitation, permission, and data-preservation contracts are concrete enough to implement safely.
+
+### Phase 12 — Add profiles, groups, and migration
+
+Owner: Codex | Status: Implemented locally — ready for SQL review | Next action: Phase 13 is implemented below; use the complete SQL setup guide for installation.
+
+Deliverables: [clean schema](supabase/schema.sql), [destructive reset migration](supabase/migrations/20261109072133_add_shared_group_foundation.sql), [read-only verification](supabase/verify-phase12.sql), and [setup/review guide](docs/shared-groups-migration.md). The user approved discarding old data during this checkpoint. PostgreSQL 17 passed 39 checks on a fresh schema and 39 after resetting populated old data; catalogs match. No hosted schema/data/Auth settings or frontend code changed. This schema is not compatible with the old frontend; apply only after the later API/frontend readiness gates.
+
+#### 12.1 Build the group data model
+
+- [x] Inspect the installed schema, constraints, grants, policies, and triggers; verify CLI 3.0.0 and migration help. Hosted Auth settings are not exposed by the connected tools and remain a Phase 14 setup check.
+- [x] Add Auth-linked profiles, normalized unique usernames, display names/colors, protected timestamps, collision-safe provisioning, and one empty private group per actual user.
+- [x] Add groups, active/inactive memberships, invitation states/expiry, and database-enforced active group ownership.
+- [x] Add group-scoped tasks, labels, links, comments, and activity with creator/author attribution and same-group foreign keys.
+- [x] Add real-user assignments referencing active membership; remove placeholder-member tables from the new model.
+- [x] Retain shared content/names when a non-owner account is deleted, remove its assignments, and block owner deletion until ownership/groups are handled.
+
+#### 12.2 Prepare clean setup and an explicit reset
+
+- [x] Replace the old preservation/backfill plan with the user's approved fresh application start.
+- [x] Provide one clean-install schema and one transactional destructive reset that retain Auth accounts and create no fictional users.
+- [x] Remove obsolete owner policies/RPCs in the reset; import no legacy task, label, comment, member, assignment, or activity rows.
+- [x] Index membership, group boards, invitation inboxes/pending requests, relationship keys, and paginated discussion.
+- [x] Generate the migration through the CLI and test fresh/reset catalog parity using isolated disposable databases.
+- [x] Enable RLS and explicitly close API grants/policies until Phase 13, including under permissive project defaults.
+- [x] Document installation choices, incompatibility with the old frontend, verification boundaries, and the review checkpoint. No SQL needs to be run by the user yet.
+
+**Done when:** The clean group model and explicit reset pass local integrity/access/cascade checks, with shared APIs closed and hosted installation deferred until the frontend is ready.
+
+### Phase 13 — Secure group access and mutations
+
+Owner: Codex | Status: Implemented locally — ready for SQL setup | Next action: User runs complete reset/verification when ready; Phase 14 accounts follows.
+
+Deliverables: [setup instructions](docs/shared-groups-migration.md), [security/API contract](docs/group-security.md), [complete reset](supabase/reset.sql), [clean schema](supabase/schema.sql), [Phase 13 migration](supabase/migrations/20261109075450_secure_shared_group_operations.sql), and [read-only verification](supabase/verify-phase13.sql). On November 9, 2026, 76 access/mutation checks passed on each fresh/reset path, 39 foundation checks passed, and three two-connection races passed. Reapplication, complete reset after shared operations, catalog parity, and local advisors passed. No hosted schema/data/Auth settings or frontend code changed. Native SQL claims exercise RLS/functions, not real JWT/HTTP Auth; managed installation checks remain in later verification.
+
+#### 13.1 Enforce group membership
+
+- [x] Implement current active database membership policies; keep the removed owner-only policies/RPCs absent from the clean model.
+- [x] Give guests and registered users the same collaboration permissions after acceptance; never authorize using user-editable metadata or a supplied group/user ID.
+- [x] Enforce read/write scope for tasks, labels, real-user links, profiles, comments, activity, group records, and invitation previews.
+- [x] Restrict profile edits to self and expose only the minimal fields needed by same-group members or authorized invitation lookup/preview.
+- [x] Validate same-group parents and active assignment targets in the database, with protected creator/author IDs and timestamps.
+- [x] Implement bounded authenticated exact-username/UUID lookup and invitation limits without exposing the Auth directory or email addresses.
+
+#### 13.2 Keep operations atomic
+
+- [x] Add atomic group creation/owner membership, invitation send/accept/decline/revoke, leave/remove, ownership transfer, and owner-only deletion operations. Remove active assignments on departure with committed activity while retaining historical member/actor references.
+- [x] Enforce seven-day expiry, one pending request per group/recipient, recipient-only acceptance, active sender checks, retry idempotency, and re-invitation after terminal outcomes.
+- [x] Serialize accept/revoke, group deletion, owner transfer, member removal, and conflicting task writes; reject self-invites, already-active members, and unauthorized reactivation.
+- [x] Preserve exact task conflict tokens, relation-set replacement, transaction rollback, and server-generated activity with real actor snapshots; deny forged history and caller-selected authors.
+- [x] Do not use creator/author attribution as authorization after membership is lost. Keep ordinary RPCs invoker-scoped where possible and narrowly review any private privileged helper.
+- [x] Test owner/member/recipient/outsider/removed-member behavior, rollback, no-ops, concurrency, and account-deletion retention locally; run advisors and record explicit grants/RLS results.
+
+**Done when:** Membership and invitation state, not record creation or UI filtering, determine access; all state transitions and committed task history remain consistent.
+
+### Phase 14 — Build accounts and guest registration
+
+Owner: ___ | Status: Not started | Next action: Regenerate schema types and implement the Auth/session/profile layer.
+
+#### 14.1 Add the account experience
+
+- [ ] Regenerate database types and add small account/profile services, validation, state, and UI in feature folders.
+- [ ] Replace one-time guest initialization with Auth change subscriptions; handle guest entry, login, registration, sign-out, session refresh/expiry, and account switching without stale cross-account data.
+- [ ] Show account ID, editable unique username, display name/color, and a clear Guest/Register account action.
+- [ ] Upgrade the current guest's identity through supported Supabase email linking, built-in verification, and password setup; verify the UUID remains unchanged and partial conversion can resume.
+- [ ] Handle duplicate username/email, expired confirmation, resend, weak password, lost network, and pending registration while retaining work and appropriate drafts.
+- [ ] Add existing-account email/password sign-in and deliberate account switching. Explain guest-work retention before leaving that identity; do not silently merge, delete, or transfer its groups.
+- [ ] Implement native password recovery and explicit confirmation/recovery completion for local/hosted URLs; do not auto-create a new guest during callbacks.
+- [ ] Document required manual-linking, email delivery, redirect, and Auth settings. Use Supabase-managed session persistence; never persist plaintext passwords, log tokens, or expose credentials/service secrets in profiles or Vite.
+- [ ] Review native password-security settings and leaked-password protection where the project plan supports it; the read-only hosted baseline flags that setting. No settings were changed during Phase 13.
+
+**Done when:** A guest can register, keep the same identity/work, and log back in from another browser; sign-in, sign-out, and recovery produce correct session/profile state.
+
+### Phase 15 — Build groups, invitations, and members
+
+Owner: ___ | Status: Not started | Next action: Add group selection and acceptance-based membership screens.
+
+#### 15.1 Replace manually created identities
+
+- [ ] Add group services/state, group creation, a joined-groups page, and a header switcher with empty/loading/error/retry states.
+- [ ] Display the initial empty private group as an ordinary group that its members can share by invitation.
+- [ ] Replace Add member/name-color creation with Invite by exact username or account ID; display the resolved minimal identity before sending.
+- [ ] Add incoming and authorized sent invitation views with pending/accepted/declined/revoked/expired states, accept/decline/revoke actions, and safe retry.
+- [ ] Allow invitations to existing anonymous guest profiles as well as registered accounts; acceptance must occur under the actual invited identity.
+- [ ] Show actual group members and self-profile links; eliminate manual name/color identity creation.
+- [ ] Implement own leave and owner-only member removal, transfer, and confirmed group deletion, including the last-owner guard.
+- [ ] Extend supported navigation for Account, Groups, Members, Invitations, and `group=<UUID>` while preserving direct-link/error behavior and narrow-screen controls.
+
+**Done when:** Two independently signed-in users can join the same group through a recipient-accepted request, and one user can belong to and switch between multiple groups.
+
+### Phase 16 — Scope task features to the active group
+
+Owner: ___ | Status: Not started | Next action: Move task lookups, board state, and detail operations to group-aware contracts.
+
+#### 16.1 Connect shared task work
+
+- [ ] Key stores, caches, requests, mutations, cursors, and selected details by Auth identity and group; ignore late responses from earlier groups/accounts.
+- [ ] Replace owner-only queries/RPC arguments with validated group-aware access for tasks, labels, assignments, comments, and history.
+- [ ] Populate assignment pickers from accepted active group members; reject pending, foreign-group, and inactive targets.
+- [ ] Show real author/actor names in comments/activity; preserve historic name snapshots, no-op semantics, and immutable history after renames/departures.
+- [ ] Scope filter options, summary totals, empty/error states, and task direct links to the active group. Restore filters/scroll per group without reusing foreign member/label IDs.
+- [ ] Run unsaved-draft/pending-operation guards when switching group/account and clear incompatible task overlays. Do not expose cached content after membership is lost.
+- [ ] Preserve guest UUID, group memberships, and newly created task/comment/history data when registering that guest.
+- [ ] Extend focused service, state, navigation, and composition tests for shared editing, two groups, rapid switching, stale reads, archived labels, member departures, and conflict handling.
+
+**Done when:** All existing task features work inside the selected group for any active member, with accurate attribution and no data mixing across groups or identities.
+
+### Phase 17 — Synchronize shared work
+
+Owner: ___ | Status: Not started | Next action: Add authorized Realtime subscriptions and reconnect/access-loss recovery.
+
+#### 17.1 Reflect committed changes across users
+
+- [ ] Verify current Supabase Realtime APIs, RLS behavior, publication setup, and deletion limitations before choosing channel/filter contracts.
+- [ ] Subscribe only to authorized group/task and identity-specific invitation/membership changes; do not publish unrestricted group contents.
+- [ ] Refetch authoritative rows after changes and update cards, assignments, labels, comments, activity, counts, and inbox state without duplicate records/events.
+- [ ] Keep active drafts during remote edits, preserve exact update tokens, and surface conflicts rather than silently overwriting newer work.
+- [ ] Tear down channels on group/account changes and recover after reconnect or a missed event; retain retry and manual refresh paths.
+- [ ] Revalidate membership on focus/reconnect, periodically while open, and on authorization failures; do not rely on receiving a removal event after SELECT access is revoked.
+- [ ] Clear inaccessible group caches/details and redirect to a safe group/no-groups state after leave/removal/deletion, while RLS independently rejects reads/writes.
+- [ ] Test two live browser clients, reconnect, invitation acceptance, concurrent edits, member removal with an open detail, cleanup, and narrow-screen feedback.
+
+**Done when:** Members see each other's committed changes, conflicts remain explicit, and losing group access reliably removes the active view without depending on UI authorization.
+
+### Phase 18 — Verify security and the complete experience
+
+Owner: ___ | Status: Not started | Next action: Review accumulated tests and exercise real guest/registered clients in shared and isolated groups.
+
+#### 18.1 Test application behavior
 
 - [ ] Extend unit tests for combined filter semantics, Unassigned/Unlabeled, archived records, and duplicate joined rows.
 - [ ] Test calendar urgency, midnight refresh, completed-task dates, and whole-board statistics.
@@ -482,64 +638,71 @@ Owner: ___ | Status: Not started | Next action: Add focused tests and exercise t
 - [ ] Retain regression coverage for guest auth, task CRUD, four columns, empty drop targets, and refresh persistence.
 - [ ] Test desktop and narrow mobile flows, including multiple assignments, tags, comments, and filters.
 - [ ] Run lint, tests, type checks/production build, and a dependency audit appropriate to changed packages.
+- [ ] Test guest-to-account conversion, unchanged UUID/data/memberships, verification resume/expiry, duplicate username/email, password recovery, sign-in/out, and intentional identity switching.
+- [ ] Test group creation/switching, accepted membership, invitation state transitions, real-member pickers, account/group cache isolation, and removal with a dirty open task.
+- [ ] Test simultaneous membership/invitation changes, live task conflicts, reconnect/refetch, and subscription cleanup without duplicate activity/comments.
 
-#### 11.2 Verify ownership with real guest clients
+#### 18.2 Verify access with real guest and registered clients
 
-Use Guest A and Guest B access tokens against the actual Data API/RPC in an isolated test project. Interface filtering and SQL Editor queries do not prove RLS isolation.
+Use actual guest and registered-user access tokens against the Data API/RPC in an isolated test project. A and B share Group G; A also owns private Group H. C is an outsider/pending invitee, and D is a removed member. Repeat same-group boundary checks with a caller who belongs to both groups. Interface filtering and SQL Editor queries do not prove RLS isolation.
 
-- [ ] Have both guests create tasks, members, labels, assignments, and comments.
-- [ ] Through B, try reading, updating, archiving, or deleting known A records; confirm A data remains inaccessible and unchanged.
-- [ ] Try linking B's task to A's member/label and A's task to B's member/label; confirm both directions fail.
-- [ ] Try creating a comment or history-related relationship on A's task through B; confirm rejection.
-- [ ] Try inserting with A's `user_id`, changing ownership, and rewriting protected timestamps through B.
-- [ ] Try assigning archived members and attaching archived labels through a direct client; confirm rejection.
-- [ ] Try direct INSERT, UPDATE, DELETE, and RPC-based forgery of activity; confirm no guest can author arbitrary history.
-- [ ] Verify allowed mutations still append correct events and failed transactions append none.
-- [ ] Verify anonymous clients without a signed-in guest token cannot access the new tables/functions.
-- [ ] Check unauthorized zero-row updates/deletes as well as explicit errors, then re-read data as its real owner.
-- [ ] Run advisors and resolve findings or document a specific reviewed exception.
+- [ ] Let both A and B create/edit/move/delete G tasks, manage labels, assign active members, and post comments. Confirm shared access and correct creator/author attribution.
+- [ ] Verify B cannot access H and C/D cannot access G content through known IDs, nested selects, direct tables, RPCs, or Realtime. Pending invitees receive only their authorized invitation preview.
+- [ ] Try linking tasks, labels, real-user assignments, and comment/history relationships across G/H in both directions, including as A who can access both groups; reject mismatched parents.
+- [ ] Try forging group membership, recipient acceptance, owner roles, attribution, protected timestamps, and group IDs through raw requests.
+- [ ] Try direct membership insertion/reactivation, self-invites, duplicate invites, accept after revoke/expiry, accepting another user's request, and changing an invite's target; verify transactional rejection/idempotency as specified.
+- [ ] Try assigning pending/inactive/foreign members and attaching archived labels through a direct client; retain permitted existing archived-label links without granting access.
+- [ ] Verify all active members may invite, only intended recipients accept/decline, and only the current owner removes others/transfers/deletes. Test former-owner privileges after transfer.
+- [ ] After leave/removal, retry reads/writes using the same still-valid token and stale open detail; confirm old creator fields/compatibility RPCs do not restore access.
+- [ ] Try direct INSERT, UPDATE, DELETE, and RPC-based forgery of activity; preserve append-only comments and database-generated actual actor/name snapshots.
+- [ ] Verify allowed mutations append correct events once, no-ops add none, and failed transactions append none.
+- [ ] Verify unauthenticated API-key-only clients cannot access the new tables/functions or invitation lookup; keep private Auth/email fields undisclosed to other users.
+- [ ] Check unauthorized zero-row updates/deletes as well as explicit errors, then re-read as an authorized member; run advisors and resolve findings or record a specific reviewed exception.
 
-#### 11.3 Verify upgrade and recovery
+#### 18.3 Verify clean setup, reset, and recovery
 
-- [ ] Upgrade a copy of the current schema containing existing tasks, then compare all preexisting values.
+- [ ] Reset a populated copy of the old schema and verify old application data is discarded while Auth accounts remain.
 - [ ] Apply the full schema to an empty test project and run the same guest-client checks.
 - [ ] Confirm generated types and application queries match both installation paths.
-- [ ] Exercise auth-user/task cascades and verify no orphaned links, comments, or activity remain.
-- [ ] Confirm the previous frontend can still use the upgraded database, or document a coordinated release order before deployment.
+- [ ] Exercise task/group deletion cascades and verify no orphaned links, comments, or activity remain; verify non-owner account deletion and member departure retain shared content/history, and owner deletion requires the specified transfer/delete path.
+- [ ] Use a coordinated backend/frontend release: the old private frontend is intentionally incompatible with the clean group model.
 - [ ] Record tested commit, migration version, environment, and results without storing guest tokens.
+- [ ] Create work as a guest in the new schema, register it, then log in on another browser and verify its exact UUID, groups, tasks, assignments, comments, and history survived.
+- [ ] Verify old placeholder profiles/links are absent, no Auth users were invented, and all new assignments reference accepted accounts.
 
-**Done when:** All seven requested features work through refresh and failures, database isolation is verified directly, and both upgrade and clean-install paths pass.
+**Done when:** All original features and the shared-account/group experience work through refresh, failures, multiple clients, and access loss; database boundaries and both installation paths are verified directly.
 
-### Phase 12 — Update documentation and release
+### Phase 19 — Update documentation and release
 
 Owner: ___ | Status: Not started | Next action: Document verified features and prepare the reviewed release.
 
-#### 12.1 Update the project handoff
+#### 19.1 Update the project handoff
 
 - [ ] Update README features, navigation, domain model, setup, and known limitations to match the verified build.
 - [ ] Document member/label archival, multiple assignments, comment rules, filter semantics, history retention, and summary scope.
-- [ ] Explain that members are guest-managed profiles and do not create shared authenticated access.
-- [ ] Include upgrade instructions for existing users and full-schema instructions for new installations.
-- [ ] Document application RPCs, RLS/relationship constraints, and the narrowly scoped activity trigger privileges.
+- [ ] Explain the difference between actual group members and anonymous guest accounts; explain the approved discard of old placeholder records.
+- [ ] Document unique usernames/account IDs, native email confirmation/recovery setup, group permissions, invitation acceptance/expiry, account switching, Realtime recovery, and access revocation.
+- [ ] Include explicit destructive-reset instructions and clean-schema instructions, with their appropriate release gates.
+- [ ] Document group/invitation/task RPCs, membership-based RLS/relationship constraints, and the narrowly scoped private helper/activity privileges.
 - [ ] Add the exact repository/live URLs and current screenshots once available.
 - [ ] Verify setup instructions against a clean checkout and keep `.env.local` ignored.
 
-#### 12.2 Deploy the tested update
+#### 19.2 Deploy the tested update
 
 - [ ] Confirm the intended GitHub repository, hosting project, Supabase project, and tested commit.
-- [ ] Apply the reviewed additive database upgrade first, with compatibility and recovery checks from Phase 11.
+- [ ] Apply the explicitly approved fresh/reset database path and coordinated frontend release from Phase 18; avoid accidentally replaying obsolete owner-schema setup.
 - [ ] Deploy the frontend using the existing Vite build settings and public Supabase environment values.
-- [ ] Verify Board, Team, Labels, and direct task links on the deployed URL, including refresh and Back/Forward.
-- [ ] Repeat create → assign → tag → comment → move → inspect history → refresh on the live app.
-- [ ] Repeat cross-guest isolation checks and inspect application/database errors before accepting the release.
+- [ ] Verify Account, Groups, Members, Invitations, Board, Labels, confirmation/recovery, and group/task direct links on the deployed URL, including refresh and Back/Forward.
+- [ ] Repeat guest → register → log in elsewhere → create group → invite guest/user → accept → assign → comment → move → inspect history → refresh across two clients.
+- [ ] Repeat shared-group/outsider/removed-member access checks, group switching, Realtime recovery, and application/database error inspection before accepting release.
 - [ ] Keep backup/recovery instructions available; do not use a destructive schema rollback as a routine frontend rollback.
 
-#### 12.3 Update assessment materials
+#### 19.3 Update assessment materials
 
 - [ ] Include all implemented enhancements and the reasons for the database/UI design choices.
 - [ ] Include the full final SQL: every table, constraint, index, grant, policy, function, and trigger.
 - [ ] Include clickable live-app and GitHub links, local setup, migration instructions, and verification results.
-- [ ] Explain remaining limits, such as guest account recovery, real shared collaboration, image uploads, and cross-tab realtime sync.
+- [ ] Explain remaining limits, such as unrecoverable unregistered guests after storage loss, automatic account merging, invitation emails, OAuth, and image uploads. Document verified Realtime behavior and recovery rather than listing collaboration as future work.
 - [ ] Keep the required `firstname_lastname_task_manager_assessment.pdf` filename pattern when generating a PDF.
 - [ ] Check the document against the final deployed app and exclude credentials or confidential assessment text.
 
@@ -561,18 +724,31 @@ These are incremental planning estimates for extending the existing application,
 | Persistent comments — Phase 8 | 40 minutes |
 | Activity timeline — Phase 9 | 30 minutes |
 | Combined filters, due dates, and summary polish — Phase 10 | 35 minutes |
-| Integration, migration, security, and UI verification — Phase 11 | 80 minutes |
-| Documentation, deployment, and submission updates — Phase 12 | 40 minutes |
-| **Enhancement planning target** | **9 hours 25 minutes** |
+| **Original Phases 1–10 target (historical)** | **7 hours 25 minutes** |
+| Collaboration design — Phase 11 | 30–60 minutes |
+| Clean schema, destructive reset, and database checks — Phase 12 | 1–2 hours |
+| Group security, transactional APIs, and SQL tests — Phase 13 | 3–5 hours |
+| Accounts, guest upgrade, and recovery — Phase 14 | 2–4 hours |
+| Groups, invitations, and membership UI — Phase 15 | 2–4 hours |
+| Group-scoped task features and state — Phase 16 | 3–5 hours |
+| Realtime synchronization and access-loss recovery — Phase 17 | 1–3 hours |
+| Integration, migration, security, and UI verification — Phase 18 | 3–6 hours |
+| Documentation, deployment, and submission updates — Phase 19 | 1–2 hours |
+
+The shared-group addition is a substantial change to authorization and data ownership, not a small account form. These ranges are planning allowances, not promises or measured time. Re-estimate after the database and guest-conversion checkpoints; the old 9-hour-25-minute full-update target no longer covers the expanded scope.
 
 ### Milestones
 
 - [x] **Plan reviewed:** Existing behavior, scope, management views, and task detail design are agreed.
-- [ ] **Database ready:** Additive schema, ownership constraints, policies, atomic saves, and activity capture pass guest-client checks.
+- [x] **Shared-group contract recorded:** Email/password plus unique usernames, guest preservation, group permissions, and invitation acceptance are defined in Phase 11.
+- [ ] **Database ready:** Clean/reset group schema, membership constraints/policies, atomic group/invitation/task operations, and activity capture pass real-client checks.
+- [ ] **Accounts ready:** Guests register without losing identity/work; login, recovery, usernames, and session changes work.
+- [ ] **Groups ready:** Users create/join/switch groups, guests accept invitations, and membership/ownership changes enforce access correctly.
 - [ ] **Workspace ready:** Shared types/state, navigation, and the task detail shell work.
-- [ ] **Organization ready:** Members, multiple assignees, labels, and card metadata persist.
+- [ ] **Organization ready:** Real group members, multiple assignees, labels, and card metadata persist in their proper group.
 - [ ] **Context ready:** Comments and activity are available in task details with reliable loading and recovery.
 - [ ] **Board ready:** All filters, due-date indicators, and clearly scoped statistics work together.
+- [ ] **Shared work ready:** Realtime updates, conflicts, reconnect, and access-loss handling pass two-client checks without mixing groups/accounts.
 - [ ] **Release ready:** Regression/security/migration checks pass; deployment and documents match the implementation.
 
 ### Review at each checkpoint
@@ -588,6 +764,12 @@ Check current documentation before implementation, especially migration CLI beha
 
 - [Supabase changelog and breaking changes](https://supabase.com/changelog?types=breaking-change)
 - [Supabase anonymous sign-in and guest identity](https://supabase.com/docs/guides/auth/auth-anonymous)
+- [Supabase password authentication](https://supabase.com/docs/guides/auth/passwords)
+- [Supabase application profiles and Auth data](https://supabase.com/docs/guides/auth/managing-user-data)
+- [Supabase email templates and confirmation](https://supabase.com/docs/guides/auth/auth-email-templates)
+- [Supabase Auth state changes](https://supabase.com/docs/reference/javascript/auth-onauthstatechange)
+- [Supabase Realtime Postgres Changes](https://supabase.com/docs/guides/realtime/postgres-changes)
+- [Supabase CLI v3 changes](https://supabase.com/changelog/supabase-cli-v3)
 - [Supabase Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
 - [Explicit Data API grants and access control](https://supabase.com/docs/guides/api/securing-your-api)
 - [Data API exposure change](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically)

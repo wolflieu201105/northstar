@@ -1,4 +1,5 @@
 -- READ-ONLY hosted-project inspection before the enhancement upgrade.
+-- Historical private schema only. Current group setup uses verify-phase13.sql.
 -- Run in SQL Editor for the intended project; this does not alter its schema/data.
 
 select current_database() as database_name,

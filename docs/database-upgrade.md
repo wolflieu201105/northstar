@@ -1,3 +1,7 @@
+# Historical private-workspace upgrade
+
+The procedures below describe the previous schema. Phases 12–13 now supply the approved complete reset; use the [shared-group SQL guide](shared-groups-migration.md) for current installation. The backend is ready for setup, while the old frontend needs the later group-aware integration.
+
 # Database enhancement upgrade — Phase 2
 
 This checkpoint prepares the data model for [path-updates.md](../path-updates.md). The SQL has been tested with local synthetic data and is staged for review. Phase 3 will add the new guest policies/grants, atomic task-save RPC, and trusted activity capture before the enhancements are connected to the app.
@@ -9,7 +13,7 @@ This checkpoint prepares the data model for [path-updates.md](../path-updates.md
 | File | Purpose |
 | --- | --- |
 | [`supabase/schema.sql`](../supabase/schema.sql) | Full schema for a clean installation at the current checkpoint: existing tasks/auth integration plus the enhancement data model. |
-| [`20261108193633_add_workspace_enhancements.sql`](../supabase/migrations/20261108193633_add_workspace_enhancements.sql) | Additive upgrade for a project that already has the original Northstar `tasks` schema. Generated using Supabase CLI 3.0.0. |
+| `20261108193633_add_workspace_enhancements.sql` (retired) | Additive upgrade for a project that already has the original Northstar `tasks` schema. Generated using Supabase CLI 3.0.0. |
 | [`supabase/preflight.sql`](../supabase/preflight.sql) | Read-only inspection of the intended hosted project before applying the upgrade. |
 | [`supabase/tests/`](../supabase/tests/) | Local-only fixtures, SQL assertions, catalog comparison, and PowerShell runner. Never apply test fixtures to a hosted project. |
 

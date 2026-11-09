@@ -19,23 +19,23 @@ select jsonb_build_object(
       )
     ) order by c.relname)
     from pg_class c join pg_namespace n on n.oid = c.relnamespace
-    where n.nspname = 'public' and c.relkind = 'r'
+    where n.nspname in ('public', 'private') and c.relkind = 'r'
   ),
   'constraints', (
     select jsonb_agg(jsonb_build_object(
       'table', c.relname, 'name', k.conname, 'definition', pg_get_constraintdef(k.oid)
     ) order by c.relname, k.conname)
     from pg_constraint k join pg_class c on c.oid = k.conrelid
-    join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public'
+    join pg_namespace n on n.oid = c.relnamespace where n.nspname in ('public', 'private')
   ),
   'indexes', (
     select jsonb_agg(jsonb_build_object(
       'table', tablename, 'name', indexname, 'definition', indexdef
-    ) order by tablename, indexname) from pg_indexes where schemaname = 'public'
+    ) order by schemaname, tablename, indexname) from pg_indexes where schemaname in ('public', 'private')
   ),
   'policies', (
     select jsonb_agg(to_jsonb(p) order by p.tablename, p.policyname)
-    from pg_policies p where schemaname = 'public'
+    from pg_policies p where schemaname in ('public', 'private')
   ),
   'functions', (
     select jsonb_agg(jsonb_build_object(
@@ -51,6 +51,6 @@ select jsonb_build_object(
     ) order by c.relname, t.tgname)
     from pg_trigger t join pg_class c on c.oid = t.tgrelid
     join pg_namespace n on n.oid = c.relnamespace
-    where n.nspname = 'public' and not t.tgisinternal
+    where n.nspname in ('public', 'private', 'auth') and not t.tgisinternal
   )
 );

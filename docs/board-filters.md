@@ -51,4 +51,4 @@ Run `npm run dev` and use existing tasks or create a few with different assignme
 
 Automated validation on November 9, 2026: 135 tests across 30 files passed, plus ESLint and the TypeScript/production build. A focused 34-test run under `America/New_York` also passed, including spring/fall DST transitions, month/year/leap-day boundaries, midnight updates, cleanup, completed-task dates, navigation, missing IDs, and failed-load recovery.
 
-Native keyboard/touch behavior, visual layout, and real tab suspension remain browser review items. Phase 11's real guest-client security checks remain pending; this checkpoint made no hosted writes.
+Native keyboard/touch behavior, visual layout, and real tab suspension remain browser review items. Phase 18's real guest-client security checks remain pending; this checkpoint made no hosted writes.

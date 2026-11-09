@@ -6,11 +6,14 @@ The interface uses a restrained black-and-green visual system and supports deskt
 
 ## Project status
 
-- Application: implemented and tested locally
+- Private-workspace frontend: implemented and tested locally
+- Shared groups: database, permissions, and atomic APIs tested locally; account/group frontend integration pending
 - Live demo: pending deployment
 - Source repository: pending publication
 
 ## Features
+
+These describe the current private frontend. The shared-group backend is ready for SQL setup; its account and group screens follow in Phases 14–16.
 
 - Automatic anonymous guest sessions that persist in the browser
 - Private task storage protected by Supabase Row Level Security
@@ -38,7 +41,9 @@ The interface uses a restrained black-and-green visual system and supports deskt
 - Accessible labels, focus states, dialog behavior, and reduced-motion support
 - Lazy-loaded board and task form bundles
 
-The enhancement roadmap is in [path-updates.md](path-updates.md). Phase 10 is ready for review: see [the board checkpoint guide](docs/board-filters.md#checkpoint-review) for filters, dates, and summaries. The [activity guide](docs/task-activity.md#checkpoint-review) retains the remaining Phase 9 browser checks. Phase 11 security and end-to-end verification follow after review. This checkpoint requires no additional SQL.
+The roadmap is in [path-updates.md](path-updates.md), also linked from [update_path.md](update_path.md). Phases 12–13 now provide the [complete group SQL setup](docs/shared-groups-migration.md) and [permission/API contract](docs/group-security.md). The approved reset discards old board data and keeps actual Auth accounts. Phase 14 adds login/registration next, followed by group/frontend integration. Final verification and release remain Phases 18–19.
+
+**Database transition:** The SQL can be installed now, but the old board will not work against the new backend until its group-aware integration. For the current project, run [reset.sql](supabase/reset.sql), then the read-only [verify-phase13.sql](supabase/verify-phase13.sql). No hosted reset has been performed by the agent.
 
 ## Technology
 
@@ -52,16 +57,9 @@ The enhancement roadmap is in [path-updates.md](path-updates.md). Phase 10 is re
 
 ## Security model
 
-Each browser receives a Supabase anonymous user. Anonymous users have unique user IDs and use the `authenticated` Postgres role.
+The new backend gives registered users and authenticated guests the same group permissions. Current database membership determines access; creator IDs, usernames, and user metadata do not. RLS scopes reads, self-profile edits allow only username/name/color, and all other client writes go through checked atomic APIs. Pending invitations expose a minimal preview without board access.
 
-The `tasks.user_id` column records ownership. Every RLS policy checks `(select auth.uid()) = user_id`, so an authenticated guest can only read or modify their own rows. The schema also:
-
-- Gives no task-table privileges to unauthenticated `anon` clients
-- Grants only the operations and columns used by the application
-- Prevents clients from changing ownership or timestamps
-- Deletes a guest's tasks if that auth user is deleted
-- Indexes the ownership-filtered task query
-- Uses a non-privileged trigger for `updated_at`
+Group-owned tasks, comments, and history survive a non-owner account deletion with saved author names. Owner accounts must transfer or delete their groups first. Activity is generated from committed changes; clients cannot insert or rewrite it. See [the security contract and verification boundaries](docs/group-security.md).
 
 The browser uses only a publishable Supabase key. Never place a secret key, service-role key, database password, or access token in a `VITE_*` variable.
 
@@ -76,10 +74,10 @@ The browser uses only a publishable Supabase key. Never place a secret key, serv
 1. Create or open a Supabase project.
 2. In Authentication settings, enable anonymous sign-ins.
 3. Open the SQL Editor.
-4. Run the full contents of [`supabase/schema.sql`](supabase/schema.sql).
+4. Follow the [group setup guide](docs/shared-groups-migration.md): use [`supabase/schema.sql`](supabase/schema.sql) for an empty project or [`supabase/reset.sql`](supabase/reset.sql) to discard the old application database. The current frontend needs the later integration before it can use this backend.
 5. Copy the project URL and a browser-safe publishable key.
 
-The SQL file contains the table, constraints, index, trigger, explicit Data API grants, and all RLS policies required by the application.
+The complete SQL includes group integrity, Auth profile initialization, RLS/grants, protected history, invitation/group operations, and atomic task APIs. Run [verify-phase13.sql](supabase/verify-phase13.sql) afterward. Historical private-workspace setup is superseded.
 
 ## Local setup
 

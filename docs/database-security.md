@@ -1,12 +1,14 @@
 # Workspace access and atomic mutations — Phase 3
 
+This records the historical private-workspace database contract, still used by the current frontend. The [Phase 12 group foundation](shared-groups-migration.md) replaces it after the approved reset; Phase 13 now provides group membership access and new atomic APIs; see the [current contract](group-security.md). These owner policies/RPCs must not be reapplied to the new group schema.
+
 Apply the Phase 3 migration after the Phase 2 workspace migration. This checkpoint adds the database contract for the later frontend work; it does not add Team, Labels, Comments, or Activity screens yet.
 
 ## Apply to the existing Supabase project
 
 The Phase 2 tables were confirmed present through read-only project inspection. The next SQL file is:
 
-[`20261108195255_secure_workspace_mutations.sql`](../supabase/migrations/20261108195255_secure_workspace_mutations.sql)
+`20261108195255_secure_workspace_mutations.sql` (retired)
 
 In the intended project's SQL Editor, open a new query, paste that entire file including `begin;` and `commit;`, and run it once. The migration installs policies, grants, functions, and triggers, then notifies PostgREST to reload its schema when the transaction commits. Existing tasks are not updated or backfilled.
 

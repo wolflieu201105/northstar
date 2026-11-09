@@ -2,6 +2,8 @@
 
 Phase 1 deliverable for [path-updates.md](../path-updates.md). This document records the implementation decisions for the new features. The sketches describe the intended interface; they are not completed application screens.
 
+This records the original private-workspace scope. The [Phase 11 accounts and shared-groups design](shared-groups-design.md) supersedes its future identity/access assumptions. The existing implementation remains the migration baseline.
+
 ## Scope
 
 Keep one private workspace per authenticated guest, the four existing task statuses, and the existing black–green visual system.
@@ -25,7 +27,7 @@ Existing tasks retain their IDs, owners, fields, and timestamps during the upgra
 | Summary | Total/completed/overdue are derived from all loaded tasks before filtering. | Existing utility test covers whole-board counts. |
 | Visual system | Near-black primary controls, green accents, neutral/mint surfaces, red/amber urgency, shared CSS variables. | Existing tokens reviewed; their values remain the starting point for new components. |
 
-The user previously reported that the connected application works. That report and the local automated checks are baseline evidence, not a replacement for the direct two-guest database tests planned in Phase 11.
+The user previously reported that the connected application works. That report and the local automated checks are baseline evidence, not a replacement for the direct two-guest database tests planned in Phase 18.
 
 ### Local regression results
 
