@@ -14,7 +14,9 @@ export interface Task {
   status: TaskStatus
   priority: TaskPriority
   due_date: string | null
-  user_id: string
+  group_id: string
+  created_by_user_id: string | null
+  created_by_name: string
   created_at: string
   updated_at: string
 }

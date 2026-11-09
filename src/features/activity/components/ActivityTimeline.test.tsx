@@ -10,12 +10,12 @@ const actions = () => ({ onRetry: vi.fn(), onLoadMore: vi.fn(), onRefresh: vi.fn
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
 
 describe('ActivityTimeline', () => {
-  it('shows the guest actor, exact accessible timestamp, and safely expandable old/new values', () => {
+  it('shows the recorded actor, exact accessible timestamp, and safely expandable old/new values', () => {
     const literal = '<img src=x onerror=alert(1)>'
-    const event: TaskActivity = { ...makeActivity(), event_type: 'task_edited', payload: { version: 1, changes: { title: { from: 'Original title', to: literal } } } }
+    const event: TaskActivity = { ...makeActivity(), event_type: 'task_edited', payload: { version: 2, changes: { title: { from: 'Original title', to: literal } } } }
     const { container } = render(<ActivityTimeline activity={{ ...initial(), items: [event] }} {...actions()} />)
     expect(screen.getByText('Updated title')).toBeVisible()
-    expect(screen.getByText('You')).toBeVisible()
+    expect(screen.getByText('Alex')).toBeVisible()
     const time = container.querySelector('time')!
     expect(time).toHaveAttribute('datetime', event.created_at)
     expect(time.getAttribute('aria-label')).toContain(time.title)

@@ -12,18 +12,19 @@ interface TaskState {
   notice: { message: string; retry?: () => void } | null
 }
 
-export function createTaskStore(client: AppClient | null, userId: string | undefined) {
-  const state = observable<TaskState>({ tasks: [], isLoading: Boolean(client && userId), loadError: null, pendingIds: new Set(), notice: null })
+export function createTaskStore(client: AppClient | null, groupId: string | undefined, onAccessError?: () => void) {
+  const state = observable<TaskState>({ tasks: [], isLoading: Boolean(client && groupId), loadError: null, pendingIds: new Set(), notice: null })
   const pending = new Set<string>()
   const createIds = new Map<string, string>()
   let active = false
   let loadRequest = 0
   let mutationVersion = 0
   function context() {
-    if (!client || !userId) throw new Error('Your guest session is not ready yet.')
-    return { client, userId }
+    if (!active || !client || !groupId) throw new Error('Select an accessible group first.')
+    return { client, groupId }
   }
   function upsert(task: TaskView) {
+    if (!active) return
     state.update((previous) => ({ ...previous, tasks: previous.tasks.some((item) => item.id === task.id)
       ? previous.tasks.map((item) => item.id === task.id ? task : item) : [task, ...previous.tasks] }))
   }
@@ -39,12 +40,12 @@ export function createTaskStore(client: AppClient | null, userId: string | undef
     state.update({ pendingIds: new Set(pending) })
   }
   async function reload() {
-    if (!client || !userId || !active) return
+    if (!client || !groupId || !active) return
     const request = ++loadRequest
     const version = mutationVersion
     state.update({ isLoading: true, loadError: null })
     try {
-      const rows = await fetchTasks(client, userId)
+      const rows = await fetchTasks(client, groupId)
       if (!active || request !== loadRequest) return
       if (version !== mutationVersion) { void reload(); return }
       const current = state.getSnapshot().tasks
@@ -53,13 +54,14 @@ export function createTaskStore(client: AppClient | null, userId: string | undef
         ...current.filter((row) => pending.has(row.id) && !rows.some((item) => item.id === row.id)),
       ], isLoading: false })
     } catch (error) {
+      if (serviceError(error).code === '42501') onAccessError?.()
       if (active && request === loadRequest) state.update({ loadError: serviceError(error).message, isLoading: false })
     }
   }
   async function reconcile(id: string) {
     const connection = context()
     try {
-      const row = await fetchTask(connection.client, connection.userId, id)
+      const row = await fetchTask(connection.client, connection.groupId, id)
       if (row) upsert(row)
       else state.update((previous) => ({ ...previous, tasks: previous.tasks.filter((task) => task.id !== id) }))
     } catch { /* Keep the last known state and let the visible error offer recovery. */ }
@@ -71,10 +73,13 @@ export function createTaskStore(client: AppClient | null, userId: string | undef
     createIds.set(key, id)
     acquire(id)
     try {
-      const task = await createTask(connection.client, connection.userId, input, id)
+      const task = await createTask(connection.client, connection.groupId, input, id)
       upsert(task)
       createIds.delete(key)
       return task
+    } catch (error) {
+      if (serviceError(error).code === '42501') onAccessError?.()
+      throw error
     } finally { release(id) }
   }
   async function editTask(id: string, input: TaskChanges, expectedUpdatedAt?: string) {
@@ -83,21 +88,29 @@ export function createTaskStore(client: AppClient | null, userId: string | undef
     if (!current) throw new Error('This task is no longer available.')
     acquire(id)
     try {
-      const task = await updateTask(connection.client, connection.userId, id, input, expectedUpdatedAt ?? current.updated_at)
+      const task = await updateTask(connection.client, connection.groupId, id, input, expectedUpdatedAt ?? current.updated_at)
       upsert(task)
       return task
     } catch (reason) {
       const error = serviceError(reason)
+      if (error.code === '42501') onAccessError?.()
       if (error.code === '40001' || error.uncertain) await reconcile(id)
       throw error
     } finally { release(id) }
   }
   async function removeTask(id: string) {
     const connection = context()
+    const current = state.getSnapshot().tasks.find((task) => task.id === id)
+    if (!current) throw new Error('This task is no longer available.')
     acquire(id)
     try {
-      await deleteTask(connection.client, connection.userId, id)
+      await deleteTask(connection.client, connection.groupId, id, current.updated_at)
       state.update((previous) => ({ ...previous, tasks: previous.tasks.filter((task) => task.id !== id) }))
+    } catch (reason) {
+      const error = serviceError(reason)
+      if (error.code === '42501') onAccessError?.()
+      if (error.code === '40001' || error.uncertain) await reconcile(id)
+      throw error
     } finally { release(id) }
   }
   async function moveTask(id: string, status: TaskStatus) {
@@ -109,10 +122,11 @@ export function createTaskStore(client: AppClient | null, userId: string | undef
     state.update({ notice: null })
     upsert({ ...current, status })
     try {
-      upsert(await updateTaskStatus(connection.client, connection.userId, id, status, current.updated_at))
+      upsert(await updateTaskStatus(connection.client, connection.groupId, id, status, current.updated_at))
     } catch (reason) {
       upsert(current)
       const error = serviceError(reason)
+      if (error.code === '42501') onAccessError?.()
       if (error.code === '40001' || error.uncertain) await reconcile(id)
       state.update({ notice: { message: error.message, retry: () => { void moveTask(id, status) } } })
     } finally { release(id) }

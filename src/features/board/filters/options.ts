@@ -1,5 +1,10 @@
 import type { RelationFilter } from '../../../shared/types/filters'
 import type { FilterOption } from './types'
+import type { AccountIdentity } from '../../account/types'
+
+export function assigneeFilterOption(account: AccountIdentity): FilterOption {
+  return { id: account.id, name: `${account.display_name} (@${account.username})`, archived_at: null }
+}
 
 export function getFilterOptions<Row extends FilterOption>(rows: Row[], linked: Row[]): Row[] {
   const linkedIds = new Set(linked.map((row) => row.id))

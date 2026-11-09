@@ -1,14 +1,14 @@
 # Task activity timeline
 
-Phase 9 completes the Activity view using the history already recorded by the Phase 3 database triggers. No additional SQL, dependencies, or environment variables are required.
+The Activity view introduced in Phase 9 now reads the Phase 13 group history with version 2 payloads and saved real actor/assignee names. No additional SQL is needed for the Phases 14–16 frontend integration.
 
 ## Implemented
 
 - Typed formatters display task creation, status transitions, field edits, assignment changes, and label changes. Creation includes the saved initial title/status; edits offer View changes with the recorded old/new values.
-- Member and label names come from historical payload snapshots. Current profile/label renames do not rewrite earlier entries. The actor is the authenticated guest, displayed as You; a team profile cannot be selected as the actor.
+- Member and label names come from historical payload snapshots. Current profile/label renames do not rewrite earlier entries. The actor is the actual authenticated account, displayed using its immutable `actor_name` snapshot. System cleanup events retain their System attribution.
 - Unknown event types, unsupported payload versions, and unrecognized field values have safe fallback text. Stored HTML/JSON is not interpreted as markup or inserted into the page.
 - Relative labels update every 30 seconds while Activity is visible and refresh after window focus/visibility changes. One clock serves the visible list and is cleaned up when the tab/panel closes. Each timestamp exposes an exact localized date/time including seconds, plus the original timestamp in its `datetime` attribute. Long relative intervals are approximate; the exact time remains available.
-- Activity reads use 50-row pages, owner/task filters, and full-precision timestamp/UUID cursors. Rows merge without duplicates and remain oldest first. Load more reaches later history; the newest changes are at the end.
+- Activity reads use 50-row pages, group/task filters, and full-precision timestamp/UUID cursors. Rows merge without duplicates and remain oldest first. Load more reaches later history; the newest changes are at the end.
 - Initial loading, refresh, empty baseline, read failure, and page failure are distinct. A failed page retries its same cursor. Refresh activity restarts from the first page. Existing rows remain available if a request fails.
 - Committed task revisions refetch server history after fields, status, assignments, or labels change. Optimistic moves and rejected/no-op saves do not generate browser-authored events. A late response from an older page cannot overwrite a newer refresh.
 - The empty state explains that changes made before history was enabled are unavailable. Earlier history is not reconstructed.

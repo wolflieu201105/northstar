@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { RotateCcw } from 'lucide-react'
 import { useDraftProtection, type RegisterNavigationGuard } from '../../../shared/hooks/useDraftProtection'
 import { labelNameKey, normalizeLabelDraft } from '../utils'
+import { serviceError } from '../../../shared/services/errors'
 import { LabelNameConflictError } from '../services/labels'
 import { LABEL_NAME_MAX_LENGTH, type Label, type LabelDraft } from '../types'
 import { AVATAR_COLORS, AVATAR_COLOR_NAMES } from '../../team/types'
@@ -16,9 +17,10 @@ interface LabelFormProps {
   registerGuard: RegisterNavigationGuard
   opener: HTMLElement | null
   onReloadLabels?: () => void
+  onUseLatest?: (label: Label) => void
 }
 
-export function LabelForm({ label, labels, onSave, onRestore, onClose, registerGuard, opener, onReloadLabels }: LabelFormProps) {
+export function LabelForm({ label, labels, onSave, onRestore, onClose, registerGuard, opener, onReloadLabels, onUseLatest }: LabelFormProps) {
   const id = useId()
   const nameRef = useRef<HTMLInputElement>(null)
   const writing = useRef(false)
@@ -28,6 +30,8 @@ export function LabelForm({ label, labels, onSave, onRestore, onClose, registerG
   const [error, setError] = useState<string | null>(null)
   const [serverConflict, setServerConflict] = useState<Label | null>(null)
   const [needsReload, setNeedsReload] = useState(false)
+  const latest = label ? labels.find((row) => row.id === label.id) : undefined
+  const stale = latest && label && latest.updated_at !== label.updated_at
   const duplicate = labels.find((row) => row.id !== label?.id && labelNameKey(row.name) === labelNameKey(draft.name))
     ?? (serverConflict && labelNameKey(serverConflict.name) === labelNameKey(draft.name) ? serverConflict : null)
   const duplicateMessage = duplicate ? duplicate.archived_at
@@ -40,7 +44,7 @@ export function LabelForm({ label, labels, onSave, onRestore, onClose, registerG
   }, [opener])
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (writing.current) return
+    if (writing.current || stale) return
     setError(null); setNeedsReload(false)
     let input: LabelDraft
     try { input = normalizeLabelDraft(draft) }
@@ -49,6 +53,7 @@ export function LabelForm({ label, labels, onSave, onRestore, onClose, registerG
     writing.current = true; setPending('save')
     try { await onSave(input); onClose() }
     catch (reason) {
+      if (serviceError(reason).code === '40001') { setNeedsReload(true); onReloadLabels?.() }
       if (reason instanceof LabelNameConflictError) { setServerConflict(reason.existingLabel); setNeedsReload(reason.existingLabel === null) }
       setError(reason instanceof Error ? reason.message : 'The label could not be saved.')
     } finally { writing.current = false; setPending(null) }
@@ -63,6 +68,10 @@ export function LabelForm({ label, labels, onSave, onRestore, onClose, registerG
   return <form className="member-editor label-editor" aria-labelledby={`${id}-heading`} aria-busy={pending !== null} noValidate onSubmit={(event) => void submit(event)}>
     <div className="member-editor-heading"><div><h2 id={`${id}-heading`}>{label ? 'Edit label' : 'Add label'}</h2>
       <p>Give related tasks a name and a color.</p></div></div>
+    {stale && latest && <div className="form-error" role="alert"><p>This label changed. Your draft is still here.</p>
+      {onUseLatest && <button type="button" className="text-button" disabled={pending !== null} onClick={() => {
+        if (window.confirm('Replace your label edits with the latest saved version?')) onUseLatest(latest)
+      }}>Use latest label</button>}</div>}
     <fieldset className="form-fields member-editor-fields" disabled={pending !== null}>
       <label className="form-field" htmlFor={`${id}-name`}><span>Label name</span>
         <input ref={nameRef} id={`${id}-name`} value={draft.name} maxLength={LABEL_NAME_MAX_LENGTH} autoComplete="off"
@@ -86,9 +95,9 @@ export function LabelForm({ label, labels, onSave, onRestore, onClose, registerG
         {needsReload && !duplicate && onReloadLabels && <button className="text-button" type="button" onClick={onReloadLabels}>Reload labels</button>}
       </div>}
     </fieldset>
-    <div className="member-editor-footer"><p role="status">{pending ? pending === 'restore' ? 'Restoring label…' : 'Saving label…' : 'Label names are unique within your workspace, including archived labels.'}</p>
+    <div className="member-editor-footer"><p role="status">{pending ? pending === 'restore' ? 'Restoring label…' : 'Saving label…' : 'Label names are unique within this group, including archived labels.'}</p>
       <div><button className="button button-secondary" type="button" disabled={pending !== null} onClick={() => { if (canLeave()) onClose() }}>Cancel</button>
-        <button className="button button-primary" type="submit" disabled={pending !== null || Boolean(duplicate)}>{pending === 'save' ? 'Saving…' : label ? 'Save label' : 'Add label'}</button></div>
+        <button className="button button-primary" type="submit" disabled={pending !== null || Boolean(duplicate) || Boolean(stale)}>{pending === 'save' ? 'Saving…' : label ? 'Save label' : 'Add label'}</button></div>
     </div>
   </form>
 }

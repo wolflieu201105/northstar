@@ -1,6 +1,7 @@
-import type { Tables } from '../../shared/types/database'
+import type { AccountIdentity } from '../account/types'
 
-export type TeamMember = Tables<'team_members'>
+/** Assignees are real accounts, resolved through accepted group membership. */
+export type TeamMember = AccountIdentity
 export const AVATAR_COLORS = ['#20895b', '#166b45', '#4f8065', '#505a54', '#c9892d', '#c85058'] as const
 export type AvatarColor = (typeof AVATAR_COLORS)[number]
 export const AVATAR_COLOR_NAMES: Record<AvatarColor, string> = {
@@ -8,7 +9,3 @@ export const AVATAR_COLOR_NAMES: Record<AvatarColor, string> = {
   '#505a54': 'Charcoal', '#c9892d': 'Amber', '#c85058': 'Rose',
 }
 export const MEMBER_NAME_MAX_LENGTH = 80
-export interface TeamMemberDraft {
-  name: string
-  avatar_color: AvatarColor | null
-}

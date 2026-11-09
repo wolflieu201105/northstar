@@ -10,7 +10,7 @@ import { makeComment } from '../../../test/fixtures'
 vi.mock('../../comments/services/comments', () => ({ createComment: vi.fn(), fetchComments: vi.fn() }))
 vi.mock('../../activity/services/activity', () => ({ fetchActivity: vi.fn() }))
 const client = {} as AppClient
-const comment: TaskComment = { id: 'comment-1', user_id: 'user-1', task_id: 'task-1', body: 'Draft', created_at: '2026-11-08T14:00:00.000Z' }
+const comment: TaskComment = { id: 'comment-1', group_id: 'group-1', author_user_id: 'user-1', author_name: 'Alex', task_id: 'task-1', body: 'Draft', created_at: '2026-11-08T14:00:00.000Z' }
 
 describe('useTaskDetails', () => {
   beforeEach(() => {
@@ -20,13 +20,13 @@ describe('useTaskDetails', () => {
   })
   it('retains a failed comment draft and reuses its ID on retry', async () => {
     vi.mocked(createComment).mockRejectedValueOnce(new Error('Save failed')).mockResolvedValueOnce(comment)
-    const { result } = renderHook(() => useTaskDetails(client, 'user-1', 'task-1'))
+    const { result } = renderHook(() => useTaskDetails(client, 'user-1', 'task-1', undefined, 'group-1'))
     await waitFor(() => expect(result.current.comments.isLoading).toBe(false))
     act(() => result.current.setCommentDraft('Draft'))
     await act(async () => { await expect(result.current.postComment()).rejects.toThrow('Save failed') })
     expect(result.current.commentDraft).toBe('Draft')
     await act(async () => { await result.current.postComment() })
-    expect(createComment).toHaveBeenNthCalledWith(2, client, 'user-1', 'task-1', 'Draft', vi.mocked(createComment).mock.calls[0][4])
+    expect(createComment).toHaveBeenNthCalledWith(2, client, 'group-1', 'task-1', 'Draft', vi.mocked(createComment).mock.calls[0][4], 'user-1')
     expect(result.current.commentDraft).toBe('')
     expect(result.current.comments.items).toEqual([comment])
   })
@@ -39,13 +39,13 @@ describe('useTaskDetails', () => {
     vi.mocked(fetchComments).mockResolvedValueOnce({ items: [first], nextCursor: cursor })
       .mockRejectedValueOnce(new Error('Page failed'))
       .mockResolvedValueOnce({ items: [third, first, second], nextCursor: null })
-    const { result } = renderHook(() => useTaskDetails(client, 'user-1', 'task-1'))
+    const { result } = renderHook(() => useTaskDetails(client, 'user-1', 'task-1', undefined, 'group-1'))
     await waitFor(() => expect(result.current.comments.isLoading).toBe(false))
     await act(async () => { await result.current.loadMoreComments() })
     expect(result.current.comments.items).toEqual([first])
     expect(result.current.comments.failedLoadMore).toBe(true)
     await act(async () => { await result.current.retryComments() })
-    expect(fetchComments).toHaveBeenNthCalledWith(3, client, 'user-1', 'task-1', cursor)
+    expect(fetchComments).toHaveBeenNthCalledWith(3, client, 'group-1', 'task-1', cursor)
     expect(result.current.comments.items).toEqual([first, second, third])
     expect(result.current.comments.error).toBeNull()
     expect(result.current.comments.nextCursor).toBeNull()
@@ -61,7 +61,7 @@ describe('useTaskDetails', () => {
       .mockImplementationOnce(() => new Promise((resolve) => { finishPage = resolve }))
       .mockResolvedValueOnce({ items: [first], nextCursor: cursor })
     vi.mocked(createComment).mockResolvedValue(posted)
-    const { result } = renderHook(() => useTaskDetails(client, 'user-1', 'task-1'))
+    const { result } = renderHook(() => useTaskDetails(client, 'user-1', 'task-1', undefined, 'group-1'))
     await waitFor(() => expect(result.current.comments.isLoading).toBe(false))
     let pendingPage!: Promise<void>
     act(() => { pendingPage = result.current.loadMoreComments(); void result.current.loadMoreComments() })
@@ -76,7 +76,7 @@ describe('useTaskDetails', () => {
   it('blocks duplicate posting and preserves a newer draft when an earlier save finishes', async () => {
     let finish!: (row: TaskComment) => void
     vi.mocked(createComment).mockReturnValue(new Promise((resolve) => { finish = resolve }))
-    const { result } = renderHook(() => useTaskDetails(client, 'user-1', 'task-1'))
+    const { result } = renderHook(() => useTaskDetails(client, 'user-1', 'task-1', undefined, 'group-1'))
     act(() => result.current.setCommentDraft('Draft'))
     let pending!: ReturnType<typeof result.current.postComment>
     act(() => { pending = result.current.postComment(); void result.current.postComment() })
@@ -89,7 +89,7 @@ describe('useTaskDetails', () => {
   })
 
   it.each([{ name: 'blank', body: ' \n ' }, { name: 'too long', body: 'a'.repeat(2001) }])('rejects a $name comment before calling the service', async ({ body }) => {
-    const { result } = renderHook(() => useTaskDetails(client, 'user-1', 'task-1'))
+    const { result } = renderHook(() => useTaskDetails(client, 'user-1', 'task-1', undefined, 'group-1'))
     act(() => result.current.setCommentDraft(body))
     await act(async () => { await expect(result.current.postComment()).rejects.toThrow('1–2,000 characters') })
     expect(createComment).not.toHaveBeenCalled()
@@ -101,11 +101,11 @@ describe('useTaskDetails', () => {
   it('isolates drafts and delayed read/post responses after the guest changes', async () => {
     let finishRead!: (page: { items: TaskComment[]; nextCursor: null }) => void
     let finishPost!: (row: TaskComment) => void
-    const nextGuestComment = makeComment({ id: 'guest-B-comment', user_id: 'guest-B', body: 'B comment' })
+    const nextGuestComment = makeComment({ id: 'guest-B-comment', group_id: 'guest-B', author_user_id: 'guest-B', body: 'B comment' })
     vi.mocked(fetchComments).mockImplementation(async (_client, owner) => owner === 'guest-A'
       ? new Promise((resolve) => { finishRead = resolve }) : { items: [nextGuestComment], nextCursor: null })
     vi.mocked(createComment).mockReturnValue(new Promise((resolve) => { finishPost = resolve }))
-    const { result, rerender } = renderHook(({ owner }) => useTaskDetails(client, owner, 'task-1'), { initialProps: { owner: 'guest-A' } })
+    const { result, rerender } = renderHook(({ owner }) => useTaskDetails(client, 'user-1', 'task-1', undefined, owner), { initialProps: { owner: 'guest-A' } })
     act(() => result.current.setCommentDraft('A draft'))
     let pending!: ReturnType<typeof result.current.postComment>
     act(() => { pending = result.current.postComment() })
@@ -120,7 +120,7 @@ describe('useTaskDetails', () => {
   it('keeps activity errors independent from usable comments', async () => {
     vi.mocked(fetchComments).mockResolvedValue({ items: [comment], nextCursor: null })
     vi.mocked(fetchActivity).mockRejectedValue(new Error('History unavailable'))
-    const { result } = renderHook(() => useTaskDetails(client, 'user-1', 'task-1', 'revision-1'))
+    const { result } = renderHook(() => useTaskDetails(client, 'user-1', 'task-1', 'revision-1', 'group-1'))
     await waitFor(() => expect(result.current.activity.error).toBe('History unavailable'))
     expect(result.current.comments.items).toEqual([comment])
     expect(result.current.comments.error).toBeNull()
@@ -130,7 +130,7 @@ describe('useTaskDetails', () => {
     let finish!: (page: { items: TaskComment[]; nextCursor: null }) => void
     vi.mocked(fetchComments).mockReturnValue(new Promise((resolve) => { finish = resolve }))
     vi.mocked(createComment).mockResolvedValue(comment)
-    const { result } = renderHook(() => useTaskDetails(client, 'user-1', 'task-1'))
+    const { result } = renderHook(() => useTaskDetails(client, 'user-1', 'task-1', undefined, 'group-1'))
     act(() => result.current.setCommentDraft('Draft'))
     await act(async () => { await result.current.postComment() })
     await act(async () => { finish({ items: [], nextCursor: null }) })
@@ -140,7 +140,7 @@ describe('useTaskDetails', () => {
     let finish!: (page: { items: TaskComment[]; nextCursor: null }) => void
     vi.mocked(fetchComments).mockImplementation(async (_client, _owner, taskId) => taskId === 'task-1'
       ? new Promise((resolve) => { finish = resolve }) : { items: [], nextCursor: null })
-    const { result, rerender } = renderHook(({ id, revision }) => useTaskDetails(client, 'user-1', id, revision), {
+    const { result, rerender } = renderHook(({ id, revision }) => useTaskDetails(client, 'user-1', id, revision, 'group-1'), {
       initialProps: { id: 'task-1', revision: 'revision-1' },
     })
     rerender({ id: 'task-2', revision: 'revision-1' })

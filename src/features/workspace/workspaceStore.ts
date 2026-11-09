@@ -1,53 +1,46 @@
 import type { AppClient } from '../../shared/lib/supabase'
 import type { LabelDraft } from '../labels/types'
-import type { TeamMemberDraft } from '../team/types'
-import { archiveMember, createMember, fetchTeamMembers, updateMember } from '../team/services/team'
+import { fetchMembers } from '../groups/services/groups'
 import { archiveLabel, createLabel, fetchLabels, updateLabel } from '../labels/services/labels'
+import { serviceError } from '../../shared/services/errors'
 import { createResource } from '../../shared/state/resource'
 
-export function createWorkspaceStore(client: AppClient | null, userId: string | undefined) {
-  const members = createResource(client && userId ? () => fetchTeamMembers(client, userId) : null)
-  const labels = createResource(client && userId ? () => fetchLabels(client, userId) : null)
+export function createWorkspaceStore(client: AppClient | null, userId: string | undefined, groupId?: string, onAccessError?: () => void) {
+  async function request<T>(operation: () => Promise<T>) {
+    try { return await operation() }
+    catch (reason) { if (serviceError(reason).code === '42501') onAccessError?.(); throw reason }
+  }
+  const ready = client && userId && groupId
+  const members = createResource(ready ? async () => (await request(() => fetchMembers(client, groupId))).filter((row) => row.is_active).map((row) => row.profile) : null)
+  const labels = createResource(ready ? () => request(() => fetchLabels(client, groupId)) : null)
   const intents = new Map<string, string>()
   function context() {
-    if (!client || !userId) throw new Error('Your guest session is not ready yet.')
-    return { client, userId }
+    if (!client || !userId || !groupId) throw new Error('Select an accessible group first.')
+    return { client, groupId }
   }
-  async function addMember(draft: TeamMemberDraft) {
-    const connection = context()
-    const key = `member:${JSON.stringify(draft)}`
-    const id = intents.get(key) ?? crypto.randomUUID()
-    intents.set(key, id)
-    const row = await members.mutate(id, () => createMember(connection.client, connection.userId, draft, id))
-    intents.delete(key)
-    return row
+  function token(id: string) {
+    const label = labels.getSnapshot().items.find((row) => row.id === id)
+    if (!label) throw new Error('This label is no longer available. Refresh labels.')
+    return label.updated_at
   }
   async function addLabel(draft: LabelDraft) {
-    const connection = context()
-    const key = `label:${JSON.stringify(draft)}`
+    const c = context()
+    const key = JSON.stringify(draft)
     const id = intents.get(key) ?? crypto.randomUUID()
     intents.set(key, id)
-    const row = await labels.mutate(id, () => createLabel(connection.client, connection.userId, draft, id))
+    const row = await labels.mutate(id, () => request(() => createLabel(c.client, c.groupId, draft, id)))
     intents.delete(key)
     return row
   }
   return {
-    members, labels, addMember, addLabel,
-    editMember(id: string, draft: TeamMemberDraft) {
+    members, labels, addLabel,
+    editLabel(id: string, draft: LabelDraft, expectedUpdatedAt?: string) {
       const c = context()
-      return members.mutate(id, () => updateMember(c.client, c.userId, id, draft))
+      return labels.mutate(id, () => request(() => updateLabel(c.client, c.groupId, id, draft, expectedUpdatedAt ?? token(id))))
     },
-    setMemberArchived(id: string, archived: boolean) {
+    setLabelArchived(id: string, archived: boolean, expectedUpdatedAt?: string) {
       const c = context()
-      return members.mutate(id, () => archiveMember(c.client, c.userId, id, archived))
-    },
-    editLabel(id: string, draft: LabelDraft) {
-      const c = context()
-      return labels.mutate(id, () => updateLabel(c.client, c.userId, id, draft))
-    },
-    setLabelArchived(id: string, archived: boolean) {
-      const c = context()
-      return labels.mutate(id, () => archiveLabel(c.client, c.userId, id, archived))
+      return labels.mutate(id, () => request(() => archiveLabel(c.client, c.groupId, id, archived, expectedUpdatedAt ?? token(id))))
     },
   }
 }

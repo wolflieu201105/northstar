@@ -1,0 +1,18 @@
+.group-panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 24px; margin-bottom: 24px; }
+.group-panel > h2 { margin-bottom: 14px; }
+.inline-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin: 18px 0; }
+.inline-form label { flex: 1 1 240px; }
+.group-list { list-style: none; padding: 0; margin: 16px 0; }
+.group-list > li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.group-list > li:last-child { border-bottom: 0; }
+.group-list > li > div:first-child { min-width: 0; flex: 1 1 200px; }
+.group-list p { margin: 6px 0 0; font-size: 13px; }
+.member-identity, .invitation-preview { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.invitation-preview { flex-wrap: wrap; padding: 16px; background: var(--accent-soft); border-radius: var(--radius-sm); }
+.invitation-preview > div { min-width: 0; flex: 1 1 180px; }
+.invitation-preview small, .account-reference { overflow-wrap: anywhere; }
+.member-left { color: var(--muted); }
+@media (max-width: 600px) {
+  .group-panel { padding: 18px; }
+  .group-list .form-actions { width: 100%; }
+}

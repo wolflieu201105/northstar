@@ -53,7 +53,7 @@ describe('filterTasks', () => {
 
   it('matches ANY within relationship groups and AND across all four groups, without duplicating tasks', () => {
     const alex = makeMember()
-    const sam = makeMember({ id: 'member-2', name: 'Sam', archived_at: '2026-11-08T00:00:00Z' })
+    const sam = makeMember({ id: 'member-2', display_name: 'Sam' })
     const bug = makeLabel()
     const design = makeLabel({ id: 'label-2', name: 'Design' })
     const board = [

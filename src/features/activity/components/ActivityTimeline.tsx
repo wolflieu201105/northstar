@@ -28,7 +28,7 @@ export function ActivityTimeline({ activity, onRetry, onLoadMore, onRefresh }: A
         return <li key={event.id}>
           <p>{presentation.summary}</p>
           {presentation.context && <p className="activity-context">{presentation.context}</p>}
-          <div className="activity-meta"><span>{event.actor_user_id === event.user_id ? 'You' : 'Guest'}</span><span aria-hidden="true">·</span><ActivityTimestamp value={event.created_at} now={now} /></div>
+          <div className="activity-meta"><span>{event.actor_name}</span><span aria-hidden="true">·</span><ActivityTimestamp value={event.created_at} now={now} /></div>
           {presentation.changes && presentation.changes.length > 0 && <details className="activity-details"><summary>View changes</summary>
             <dl>{presentation.changes.map((change) => <div key={change.field} className="activity-change">
               <dt>{change.label}</dt>

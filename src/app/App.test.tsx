@@ -1,18 +1,20 @@
 import type { ReactNode } from 'react'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fetchTasks, updateTask } from '../features/tasks/services/tasks'
-import { fetchTeamMembers } from '../features/team/services/team'
+import { fetchGroups, fetchMembers } from '../features/groups/services/groups'
 import { fetchLabels } from '../features/labels/services/labels'
 import { fetchComments } from '../features/comments/services/comments'
 import { fetchActivity } from '../features/activity/services/activity'
-import { makeLabel, makeMember, makeTask } from '../test/fixtures'
+import { makeLabel, makeMember, makeMembership, makeGroup, makeProfile, makeTask } from '../test/fixtures'
+import { fetchProfile } from '../features/account/services/profiles'
 import App from './App'
+vi.mock('../features/account/services/profiles', () => ({ fetchProfile: vi.fn(), saveProfile: vi.fn() }))
 
 vi.mock('../shared/lib/supabase', () => ({ supabase: {}, supabaseConfigError: null }))
-vi.mock('../features/auth/useGuestSession', () => ({ useGuestSession: () => ({ session: { user: { id: 'user-1' } }, isLoading: false, error: null, retry: vi.fn() }) }))
+vi.mock('../features/auth/useAuthSession', () => ({ useAuthSession: () => ({ session: { user: { id: 'user-1' } }, isLoading: false, error: null, retry: vi.fn() }) }))
 vi.mock('../features/tasks/services/tasks', () => ({ fetchTasks: vi.fn(), fetchTask: vi.fn(), createTask: vi.fn(), updateTask: vi.fn(), updateTaskStatus: vi.fn(), deleteTask: vi.fn() }))
-vi.mock('../features/team/services/team', () => ({ fetchTeamMembers: vi.fn(), createMember: vi.fn(), updateMember: vi.fn(), archiveMember: vi.fn() }))
+vi.mock('../features/groups/services/groups', () => ({ fetchGroups: vi.fn(), fetchMembers: vi.fn() }))
 vi.mock('../features/labels/services/labels', async (original) => ({ ...await original<typeof import('../features/labels/services/labels')>(), fetchLabels: vi.fn(), createLabel: vi.fn(), updateLabel: vi.fn(), archiveLabel: vi.fn() }))
 vi.mock('../features/comments/services/comments', () => ({ fetchComments: vi.fn(), createComment: vi.fn() }))
 vi.mock('../features/activity/services/activity', () => ({ fetchActivity: vi.fn() }))
@@ -24,21 +26,82 @@ vi.mock('@dnd-kit/react', () => ({
 
 beforeEach(() => {
   vi.resetAllMocks()
-  window.history.replaceState(null, '', '/')
+  window.history.replaceState(null, '', '/?group=group-1')
+  vi.mocked(fetchGroups).mockResolvedValue([makeGroup()])
+  vi.mocked(fetchProfile).mockResolvedValue(makeProfile())
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
   vi.mocked(fetchTasks).mockResolvedValue([makeTask({ priority: 'high' })])
-  vi.mocked(fetchTeamMembers).mockResolvedValue([])
+  vi.mocked(fetchMembers).mockResolvedValue([])
   vi.mocked(fetchLabels).mockResolvedValue([])
   vi.mocked(fetchComments).mockResolvedValue({ items: [], nextCursor: null })
   vi.mocked(fetchActivity).mockResolvedValue({ items: [], nextCursor: null })
 })
 
 describe('workspace composition', () => {
+  it('isolates two groups, guards dirty details, and restores each group’s filters', async () => {
+    vi.mocked(fetchGroups).mockResolvedValue([makeGroup(), makeGroup({ id: 'group-2', name: 'Design' })])
+    vi.mocked(fetchTasks).mockImplementation(async (_client, groupId) => [makeTask({ id: groupId + '-task', group_id: groupId, title: groupId === 'group-1' ? 'Launch brief' : 'Design review' })])
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Launch brief' }))
+    fireEvent.change(await screen.findByLabelText('Task title'), { target: { value: 'Unsaved launch' } })
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    fireEvent.change(screen.getByLabelText('Active group'), { target: { value: 'group-2' } })
+    expect(screen.getByLabelText('Task title')).toHaveValue('Unsaved launch')
+    expect(screen.getByLabelText('Active group')).toHaveValue('group-1')
+    confirm.mockReturnValue(true)
+    fireEvent.change(screen.getByLabelText('Active group'), { target: { value: 'group-2' } })
+    await screen.findByRole('button', { name: 'Design review' })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Launch brief' })).not.toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Search tasks'), { target: { value: 'review' } })
+    fireEvent.change(screen.getByLabelText('Active group'), { target: { value: 'group-1' } })
+    await screen.findByRole('button', { name: 'Launch brief' })
+    expect(screen.getByLabelText('Search tasks')).toHaveValue('')
+    fireEvent.change(screen.getByLabelText('Active group'), { target: { value: 'group-2' } })
+    await screen.findByRole('button', { name: 'Design review' })
+    expect(screen.getByLabelText('Search tasks')).toHaveValue('review')
+    confirm.mockRestore()
+  })
+
+  it('removes cached task content and dirty overlays when a successful directory refresh confirms access loss', async () => {
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Prepare launch brief' }))
+    fireEvent.change(await screen.findByLabelText('Task title'), { target: { value: 'Private draft' } })
+    vi.mocked(fetchGroups).mockResolvedValue([])
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    fireEvent.focus(window)
+    await screen.findByRole('heading', { name: 'Choose a group to start' })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByText('Private draft')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Prepare launch brief' })).not.toBeInTheDocument()
+    expect(confirm).not.toHaveBeenCalled()
+    confirm.mockRestore()
+  })
+
+  it('does not discard an open draft when group revalidation temporarily fails', async () => {
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Prepare launch brief' }))
+    fireEvent.change(await screen.findByLabelText('Task title'), { target: { value: 'Keep this draft' } })
+    vi.mocked(fetchGroups).mockRejectedValue(new Error('Offline'))
+    await act(async () => { fireEvent.focus(window) })
+    expect(screen.getByLabelText('Task title')).toHaveValue('Keep this draft')
+    expect(screen.getByRole('dialog')).toBeVisible()
+  })
+
+  it('keeps an unavailable group direct link out of all board requests', async () => {
+    window.history.replaceState({}, '', '/?group=foreign&task=secret-task')
+    render(<App />)
+    await screen.findByRole('heading', { name: 'This group is unavailable' })
+    expect(fetchTasks).not.toHaveBeenCalled()
+    expect(fetchComments).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
   it('keeps board filters/scroll through management views and reflects a detail save on the same card', async () => {
     const member = makeMember()
     const label = makeLabel()
     const task = makeTask({ priority: 'high', assignees: [member], labels: [label] })
     vi.mocked(fetchTasks).mockResolvedValue([task])
-    vi.mocked(fetchTeamMembers).mockResolvedValue([member])
+    vi.mocked(fetchMembers).mockResolvedValue([makeMembership({ profile: member })])
     vi.mocked(fetchLabels).mockResolvedValue([label])
     vi.mocked(updateTask).mockResolvedValue({ ...task, title: 'Updated launch brief', updated_at: '2026-11-09T06:00:00.123456Z' })
     render(<App />)
@@ -47,13 +110,13 @@ describe('workspace composition', () => {
     fireEvent.change(screen.getByLabelText('Filter by priority'), { target: { value: 'high' } })
     const filters = screen.getByRole('group', { name: 'Board filters' })
     filters.querySelectorAll('details').forEach((details) => { details.open = true })
-    fireEvent.click(within(filters).getByRole('checkbox', { name: member.name }))
+    fireEvent.click(within(filters).getByRole('checkbox', { name: `${member.display_name} (@${member.username})` }))
     fireEvent.click(within(filters).getByRole('checkbox', { name: label.name }))
     const board = screen.getByLabelText('Task board')
     board.scrollLeft = 73
     const navigation = screen.getByRole('navigation', { name: 'Workspace' })
-    fireEvent.click(within(navigation).getByRole('button', { name: 'Team' }))
-    await screen.findByRole('heading', { name: 'Team' })
+    fireEvent.click(within(navigation).getByRole('button', { name: 'Members' }))
+    await screen.findByRole('heading', { name: 'Members' })
     fireEvent.click(within(navigation).getByRole('button', { name: 'Labels' }))
     await screen.findByRole('heading', { name: 'Labels' })
     fireEvent.click(within(navigation).getByRole('button', { name: 'Board' }))
@@ -61,34 +124,34 @@ describe('workspace composition', () => {
     expect(board.scrollLeft).toBe(73)
     expect(screen.getByLabelText('Search tasks')).toHaveValue('launch')
     expect(screen.getByLabelText('Filter by priority')).toHaveValue('high')
-    expect(within(filters).getByRole('checkbox', { name: member.name })).toBeChecked()
+    expect(within(filters).getByRole('checkbox', { name: `${member.display_name} (@${member.username})` })).toBeChecked()
     expect(within(filters).getByRole('checkbox', { name: label.name })).toBeChecked()
     fireEvent.click(screen.getByRole('button', { name: task.title }))
     await screen.findByRole('dialog', { name: task.title })
     fireEvent.change(screen.getByLabelText('Task title'), { target: { value: 'Updated launch brief' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
     await screen.findByText('Changes saved.')
-    expect(updateTask).toHaveBeenCalledWith(expect.anything(), 'user-1', task.id, expect.objectContaining({ title: 'Updated launch brief' }), task.updated_at)
+    expect(updateTask).toHaveBeenCalledWith(expect.anything(), 'group-1', task.id, expect.objectContaining({ title: 'Updated launch brief' }), task.updated_at)
     fireEvent.click(screen.getByRole('button', { name: 'Close task details' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(screen.getByRole('button', { name: 'Updated launch brief' })).toBeVisible()
     expect(fetchTasks).toHaveBeenCalledOnce()
-    expect(fetchTeamMembers).toHaveBeenCalledOnce()
+    expect(fetchMembers).toHaveBeenCalledTimes(2)
     expect(fetchLabels).toHaveBeenCalledOnce()
   })
 
   it('combines relationship filters, preserves whole-board counts, and clears all groups without hiding columns', async () => {
     const alex = makeMember()
-    const sam = makeMember({ id: 'member-2', name: 'Sam', archived_at: '2026-11-09T00:00:00Z' })
+    const sam = makeMember({ id: 'member-2', username: 'sam', display_name: 'Sam' })
     const bug = makeLabel()
-    const archived = makeLabel({ id: 'label-2', name: 'Design', archived_at: sam.archived_at })
+    const archived = makeLabel({ id: 'label-2', name: 'Design', archived_at: '2026-11-09T00:00:00Z' })
     const tasks = [
       makeTask({ title: 'Launch fix', priority: 'high', assignees: [alex, sam], labels: [bug, archived] }),
       makeTask({ id: 'task-2', title: 'Launch review', priority: 'high', assignees: [sam], labels: [archived] }),
       makeTask({ id: 'task-3', title: 'Unassigned task', status: 'done' }),
     ]
     vi.mocked(fetchTasks).mockResolvedValue(tasks)
-    vi.mocked(fetchTeamMembers).mockResolvedValue([alex, sam])
+    vi.mocked(fetchMembers).mockResolvedValue([makeMembership({ profile: alex }), makeMembership({ user_id: sam.id, profile: sam })])
     vi.mocked(fetchLabels).mockResolvedValue([bug, archived])
     render(<App />)
     await screen.findByRole('button', { name: 'Launch fix' })
@@ -96,7 +159,7 @@ describe('workspace composition', () => {
     filters.querySelectorAll('details').forEach((details) => { details.open = true })
     fireEvent.change(screen.getByLabelText('Search tasks'), { target: { value: '  LAUNCH  ' } })
     fireEvent.change(screen.getByLabelText('Filter by priority'), { target: { value: 'high' } })
-    fireEvent.click(within(filters).getByRole('checkbox', { name: 'Sam (Archived)' }))
+    fireEvent.click(within(filters).getByRole('checkbox', { name: 'Sam (@sam)' }))
     fireEvent.click(within(filters).getByRole('checkbox', { name: 'Bug' }))
     expect(screen.getByText('Showing 1 of 3 tasks')).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Launch review' })).not.toBeInTheDocument()
@@ -118,14 +181,14 @@ describe('workspace composition', () => {
   })
 
   it('retains direct-link selections while lookups load, then ignores unknown IDs', async () => {
-    window.history.replaceState(null, '', '/?assignee=member-1&assignee=deleted&label=missing')
-    let finishMembers!: (rows: ReturnType<typeof makeMember>[]) => void
-    vi.mocked(fetchTeamMembers).mockReturnValue(new Promise((resolve) => { finishMembers = resolve }))
+    window.history.replaceState(null, '', '/?group=group-1&assignee=member-1&assignee=deleted&label=missing')
+    let finishMembers!: (rows: ReturnType<typeof makeMembership>[]) => void
+    vi.mocked(fetchMembers).mockReturnValue(new Promise((resolve) => { finishMembers = resolve }))
     vi.mocked(fetchTasks).mockResolvedValue([makeTask({ assignees: [makeMember()] })])
     render(<App />)
     await screen.findByText('Loading assignees…')
     expect(new URLSearchParams(window.location.search).getAll('assignee')).toEqual(['member-1', 'deleted'])
-    finishMembers([makeMember()])
+    finishMembers([makeMembership()])
     await screen.findByRole('button', { name: 'Prepare launch brief' })
     expect(screen.getByText('Showing 1 of 1 tasks')).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Remove Assignee: unavailable filter' })).not.toBeInTheDocument()

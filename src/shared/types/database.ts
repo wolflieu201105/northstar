@@ -1,4 +1,3 @@
-// Generated from the installed Supabase public schema. Do not edit by hand.
 export type Json =
   | string
   | number
@@ -17,33 +16,208 @@ export type Database = {
     Tables: {
       comments: {
         Row: {
+          author_name: string
+          author_user_id: string | null
           body: string
           created_at: string
+          group_id: string
           id: string
           task_id: string
+        }
+        Insert: {
+          author_name: string
+          author_user_id?: string | null
+          body: string
+          created_at?: string
+          group_id: string
+          id?: string
+          task_id: string
+        }
+        Update: {
+          author_name?: string
+          author_user_id?: string | null
+          body?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_author_user_id_fkey"
+            columns: ["author_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_task_fkey"
+            columns: ["group_id", "task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["group_id", "id"]
+          },
+        ]
+      }
+      group_invitations: {
+        Row: {
+          created_at: string
+          expires_at: string
+          group_id: string
+          id: string
+          inviter_name: string
+          inviter_user_id: string | null
+          recipient_user_id: string
+          responded_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          group_id: string
+          id?: string
+          inviter_name: string
+          inviter_user_id?: string | null
+          recipient_user_id: string
+          responded_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          group_id?: string
+          id?: string
+          inviter_name?: string
+          inviter_user_id?: string | null
+          recipient_user_id?: string
+          responded_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_invitations_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_invitations_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_invitations_sender_fkey"
+            columns: ["group_id", "inviter_user_id"]
+            isOneToOne: false
+            referencedRelation: "group_members"
+            referencedColumns: ["group_id", "user_id"]
+          },
+        ]
+      }
+      group_members: {
+        Row: {
+          group_id: string
+          invited_by_user_id: string | null
+          is_active: boolean
+          joined_at: string
+          left_at: string | null
           user_id: string
         }
         Insert: {
-          body: string
-          created_at?: string
-          id?: string
-          task_id: string
-          user_id?: string
+          group_id: string
+          invited_by_user_id?: string | null
+          is_active?: boolean
+          joined_at?: string
+          left_at?: string | null
+          user_id: string
         }
         Update: {
-          body?: string
-          created_at?: string
-          id?: string
-          task_id?: string
+          group_id?: string
+          invited_by_user_id?: string | null
+          is_active?: boolean
+          joined_at?: string
+          left_at?: string | null
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "comments_task_owner_fkey"
-            columns: ["user_id", "task_id"]
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
             isOneToOne: false
-            referencedRelation: "tasks"
-            referencedColumns: ["user_id", "id"]
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_members_invited_by_user_id_fkey"
+            columns: ["invited_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          created_at: string
+          created_by_name: string
+          created_by_user_id: string | null
+          id: string
+          name: string
+          owner_membership_active: boolean
+          owner_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_name: string
+          created_by_user_id?: string | null
+          id?: string
+          name: string
+          owner_membership_active?: boolean
+          owner_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by_name?: string
+          created_by_user_id?: string | null
+          id?: string
+          name?: string
+          owner_membership_active?: boolean
+          owner_user_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "groups_active_owner_fkey"
+            columns: ["id", "owner_user_id", "owner_membership_active"]
+            isOneToOne: false
+            referencedRelation: "group_members"
+            referencedColumns: ["group_id", "user_id", "is_active"]
+          },
+          {
+            foreignKeyName: "groups_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "groups_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -52,220 +226,356 @@ export type Database = {
           archived_at: string | null
           color: string
           created_at: string
+          created_by_user_id: string | null
+          group_id: string
           id: string
           name: string
           updated_at: string
-          user_id: string
         }
         Insert: {
           archived_at?: string | null
           color?: string
           created_at?: string
+          created_by_user_id?: string | null
+          group_id: string
           id?: string
           name: string
           updated_at?: string
-          user_id?: string
         }
         Update: {
           archived_at?: string | null
           color?: string
           created_at?: string
+          created_by_user_id?: string | null
+          group_id?: string
           id?: string
           name?: string
           updated_at?: string
-          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "labels_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "labels_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_color: string | null
+          created_at: string
+          display_name: string
+          id: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          avatar_color?: string | null
+          created_at?: string
+          display_name?: string
+          id: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          avatar_color?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          updated_at?: string
+          username?: string
         }
         Relationships: []
       }
       task_activity: {
         Row: {
-          actor_user_id: string
+          actor_name: string
+          actor_user_id: string | null
           created_at: string
           event_type: string
+          group_id: string
           id: string
           payload: Json
           task_id: string
-          user_id: string
         }
         Insert: {
-          actor_user_id?: string
+          actor_name: string
+          actor_user_id?: string | null
           created_at?: string
           event_type: string
+          group_id: string
           id?: string
-          payload?: Json
+          payload: Json
           task_id: string
-          user_id?: string
         }
         Update: {
-          actor_user_id?: string
+          actor_name?: string
+          actor_user_id?: string | null
           created_at?: string
           event_type?: string
+          group_id?: string
           id?: string
           payload?: Json
           task_id?: string
-          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "task_activity_task_owner_fkey"
-            columns: ["user_id", "task_id"]
+            foreignKeyName: "task_activity_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_activity_task_fkey"
+            columns: ["group_id", "task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
-            referencedColumns: ["user_id", "id"]
+            referencedColumns: ["group_id", "id"]
           },
         ]
       }
-      task_assignees: {
+      task_assignments: {
         Row: {
+          assigned_by_user_id: string | null
+          assignee_avatar_color: string | null
+          assignee_name: string
+          assignee_user_id: string
           created_at: string
-          member_id: string
+          group_id: string
+          membership_active: boolean
           task_id: string
-          user_id: string
         }
         Insert: {
+          assigned_by_user_id?: string | null
+          assignee_avatar_color?: string | null
+          assignee_name: string
+          assignee_user_id: string
           created_at?: string
-          member_id: string
+          group_id: string
+          membership_active?: boolean
           task_id: string
-          user_id?: string
         }
         Update: {
+          assigned_by_user_id?: string | null
+          assignee_avatar_color?: string | null
+          assignee_name?: string
+          assignee_user_id?: string
           created_at?: string
-          member_id?: string
+          group_id?: string
+          membership_active?: boolean
           task_id?: string
-          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "task_assignees_member_owner_fkey"
-            columns: ["user_id", "member_id"]
+            foreignKeyName: "task_assignments_active_member_fkey"
+            columns: ["group_id", "assignee_user_id", "membership_active"]
             isOneToOne: false
-            referencedRelation: "team_members"
-            referencedColumns: ["user_id", "id"]
+            referencedRelation: "group_members"
+            referencedColumns: ["group_id", "user_id", "is_active"]
           },
           {
-            foreignKeyName: "task_assignees_task_owner_fkey"
-            columns: ["user_id", "task_id"]
+            foreignKeyName: "task_assignments_assigned_by_user_id_fkey"
+            columns: ["assigned_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignments_task_fkey"
+            columns: ["group_id", "task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
-            referencedColumns: ["user_id", "id"]
+            referencedColumns: ["group_id", "id"]
           },
         ]
       }
       task_labels: {
         Row: {
           created_at: string
+          group_id: string
           label_id: string
           task_id: string
-          user_id: string
         }
         Insert: {
           created_at?: string
+          group_id: string
           label_id: string
           task_id: string
-          user_id?: string
         }
         Update: {
           created_at?: string
+          group_id?: string
           label_id?: string
           task_id?: string
-          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "task_labels_label_owner_fkey"
-            columns: ["user_id", "label_id"]
+            foreignKeyName: "task_labels_label_fkey"
+            columns: ["group_id", "label_id"]
             isOneToOne: false
             referencedRelation: "labels"
-            referencedColumns: ["user_id", "id"]
+            referencedColumns: ["group_id", "id"]
           },
           {
-            foreignKeyName: "task_labels_task_owner_fkey"
-            columns: ["user_id", "task_id"]
+            foreignKeyName: "task_labels_task_fkey"
+            columns: ["group_id", "task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
-            referencedColumns: ["user_id", "id"]
+            referencedColumns: ["group_id", "id"]
           },
         ]
       }
       tasks: {
         Row: {
           created_at: string
+          created_by_name: string
+          created_by_user_id: string | null
           description: string | null
           due_date: string | null
+          group_id: string
           id: string
           priority: string
           status: string
           title: string
           updated_at: string
-          user_id: string
         }
         Insert: {
           created_at?: string
+          created_by_name: string
+          created_by_user_id?: string | null
           description?: string | null
           due_date?: string | null
+          group_id: string
           id?: string
           priority?: string
           status?: string
           title: string
           updated_at?: string
-          user_id?: string
         }
         Update: {
           created_at?: string
+          created_by_name?: string
+          created_by_user_id?: string | null
           description?: string | null
           due_date?: string | null
+          group_id?: string
           id?: string
           priority?: string
           status?: string
           title?: string
           updated_at?: string
-          user_id?: string
         }
-        Relationships: []
-      }
-      team_members: {
-        Row: {
-          archived_at: string | null
-          avatar_color: string | null
-          created_at: string
-          id: string
-          name: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          archived_at?: string | null
-          avatar_color?: string | null
-          created_at?: string
-          id?: string
-          name: string
-          updated_at?: string
-          user_id?: string
-        }
-        Update: {
-          archived_at?: string | null
-          avatar_color?: string | null
-          created_at?: string
-          id?: string
-          name?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tasks_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      create_group: {
+        Args: { p_group_id?: string; p_name: string }
+        Returns: Json
+      }
+      delete_group: { Args: { p_group_id: string }; Returns: Json }
+      delete_task: {
+        Args: {
+          p_expected_updated_at: string
+          p_group_id: string
+          p_task_id: string
+        }
+        Returns: Json
+      }
+      leave_group: { Args: { p_group_id: string }; Returns: Json }
+      list_group_invitations: {
+        Args: { p_before_id?: string; p_before_time?: string; p_limit?: number }
+        Returns: Json
+      }
+      lookup_invitation_target: {
+        Args: { p_group_id: string; p_query: string }
+        Returns: Json
+      }
+      post_comment: {
+        Args: {
+          p_body: string
+          p_comment_id?: string
+          p_group_id: string
+          p_task_id: string
+        }
+        Returns: Json
+      }
+      remove_group_member: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: Json
+      }
+      rename_group: {
+        Args: { p_group_id: string; p_name: string }
+        Returns: Json
+      }
+      respond_group_invitation: {
+        Args: { p_accept: boolean; p_invitation_id: string }
+        Returns: Json
+      }
+      revoke_group_invitation: {
+        Args: { p_invitation_id: string }
+        Returns: Json
+      }
+      save_label: {
+        Args: {
+          p_archived?: boolean
+          p_color?: string
+          p_expected_updated_at?: string
+          p_group_id: string
+          p_label_id: string
+          p_name?: string
+        }
+        Returns: Json
+      }
       save_task: {
         Args: {
           p_assignee_ids?: string[]
           p_changes?: Json
           p_expected_updated_at?: string
+          p_group_id: string
           p_label_ids?: string[]
-          p_task_id?: string
+          p_task_id: string
         }
+        Returns: Json
+      }
+      send_group_invitation: {
+        Args: {
+          p_group_id: string
+          p_invitation_id?: string
+          p_recipient_user_id: string
+        }
+        Returns: Json
+      }
+      transfer_group_ownership: {
+        Args: { p_group_id: string; p_user_id: string }
         Returns: Json
       }
     }

@@ -7,15 +7,17 @@ The maintenance checkpoint after Phase 8 reorganizes the existing application by
 | Location | Responsibility |
 | --- | --- |
 | `src/app/App.tsx` | Session/configuration gates and application composition. |
-| `src/app/hooks/useWorkspaceController.ts` | Coordinates the guest, workspace/task stores, navigation, and dialog state. |
+| `src/app/hooks/useWorkspaceController.ts` | Coordinates identity/group selection, group-scoped task/lookups, navigation guards, and dialog state. |
 | `src/app/components/` | Header, shell, view switching, dialogs, and notices. |
 | `src/app/state/` | Browser history and query-string navigation. |
 | `src/features/board/` | Board page, columns, toolbar, summary, and loading/empty states. |
 | `src/features/tasks/` | Task types, validation, services, stores, hooks, cards, forms, and details. |
-| `src/features/team/`, `src/features/labels/` | Their management pages, controls, types, services, and validation. |
+| `src/features/team/` | Read-only real-account avatars and assignment controls. |
+| `src/features/labels/` | Group label management, controls, services, and validation. |
+| `src/features/account/`, `src/features/groups/` | Account/profile forms and group/member/invitation pages with small components, services, hooks, and stores. |
 | `src/features/comments/`, `src/features/activity/` | Discussion UI, persistence, formatting, and validation for each feature. |
 | `src/features/workspace/` | Shared member/label lookup state used across the workspace. |
-| `src/features/auth/` | Guest-session initialization. |
+| `src/features/auth/` | Native Auth subscriptions, callback handling, guest conversion, and recovery. |
 | `src/shared/` | Reusable UI/hooks, generic state/data helpers, common contracts, and the Supabase client. |
 | `src/test/` | Test environment setup and shared fixtures. |
 
@@ -62,6 +64,6 @@ Edit files under `src/`. `npm run build` regenerates `dist/` with optimized, has
 
 Run the normal test/lint/build commands. On this Windows workspace, `npm test -- --maxWorkers=2` avoids the previously observed worker startup/file-access issue. The app-composition regression checks that management navigation preserves board filters/scroll and a detail save updates the same canonical card.
 
-For browser review, run `npm run dev`, visit Board/Team/Labels, open and save a task, post a comment, and check narrow-screen dialogs. Native focus behavior, touch dragging, and appearance remain browser checks. The [activity guide](task-activity.md) documents formatting/clock modules; the [Phase 10 board guide](board-filters.md) covers combined filters, the shared local-date clock, and summary behavior.
+For browser review, run `npm run dev`, visit Board/Members/Labels/Groups/Invitations/Account, open and save a task, post a comment, and check narrow-screen dialogs. Native focus behavior, touch dragging, and appearance remain browser checks. The [activity guide](task-activity.md) documents formatting/clock modules; the [Phase 10 board guide](board-filters.md) covers combined filters, the shared local-date clock, and summary behavior.
 
 Maintenance-checkpoint validation: 84 tests passed across 21 files, including the new app-composition regression. ESLint and the TypeScript/production build passed. The CSS syntax-tree comparison passed for all 324 original top-level rules/at-rules, and the production CSS retained its prior asset hash. That refactor made no hosted data or schema changes; later features extend these styles separately.

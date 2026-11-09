@@ -19,9 +19,9 @@ const created = makeActivity()
 const changed = makeActivity({ id: '00000000-0000-4000-8000-000000000002', created_at: '2026-11-09T05:00:00.000002Z' })
 const revision = '2026-11-09T05:00:00.000124+00:00'
 function useSelectedTask() {
-  const tasks = useTasks(client, 'user-1')
+  const tasks = useTasks(client, 'user-1', undefined, 'group-1')
   const selected = tasks.tasks.find((row) => row.id === task.id)
-  const details = useTaskDetails(client, 'user-1', selected?.id ?? null, selected?.updated_at)
+  const details = useTaskDetails(client, 'user-1', selected?.id ?? null, selected?.updated_at, 'group-1')
   return { tasks, details }
 }
 beforeEach(() => {
@@ -48,7 +48,7 @@ describe('task activity synchronization', () => {
     await act(async () => { await result.current.tasks.editTask(task.id, changes) })
     await waitFor(() => expect(result.current.details.activity.items).toEqual([created, changed]))
     expect(fetchActivity).toHaveBeenCalledTimes(2)
-    expect(updateTask).toHaveBeenCalledWith(client, 'user-1', task.id, changes, task.updated_at)
+    expect(updateTask).toHaveBeenCalledWith(client, 'group-1', task.id, changes, task.updated_at)
   })
 
   it('waits for a status commit and never appends a success event for an optimistic rollback', async () => {
@@ -87,13 +87,13 @@ describe('task activity synchronization', () => {
     vi.mocked(fetchActivity).mockResolvedValueOnce({ items: [created], nextCursor: cursor })
       .mockRejectedValueOnce(new Error('Page failed'))
       .mockResolvedValueOnce({ items: [third, created, changed], nextCursor: null })
-    const { result } = renderHook(() => useTaskDetails(client, 'user-1', task.id))
+    const { result } = renderHook(() => useTaskDetails(client, 'user-1', task.id, undefined, 'group-1'))
     await waitFor(() => expect(result.current.activity.isLoading).toBe(false))
     await act(async () => { await result.current.loadMoreActivity() })
     expect(result.current.activity.items).toEqual([created])
     expect(result.current.activity.failedLoadMore).toBe(true)
     await act(async () => { await result.current.retryActivity() })
-    expect(fetchActivity).toHaveBeenNthCalledWith(3, client, 'user-1', task.id, cursor)
+    expect(fetchActivity).toHaveBeenNthCalledWith(3, client, 'group-1', task.id, cursor)
     expect(result.current.activity.items).toEqual([created, changed, third])
     expect(result.current.activity.nextCursor).toBeNull()
   })
@@ -104,7 +104,7 @@ describe('task activity synchronization', () => {
     vi.mocked(fetchActivity).mockResolvedValueOnce({ items: [created], nextCursor: cursor })
       .mockImplementationOnce(() => new Promise((resolve) => { finishPage = resolve }))
       .mockResolvedValueOnce({ items: [created], nextCursor: cursor })
-    const { result, rerender } = renderHook(({ token }) => useTaskDetails(client, 'user-1', task.id, token), { initialProps: { token: task.updated_at } })
+    const { result, rerender } = renderHook(({ token }) => useTaskDetails(client, 'user-1', task.id, token, 'group-1'), { initialProps: { token: task.updated_at } })
     await waitFor(() => expect(result.current.activity.isLoading).toBe(false))
     let pending!: Promise<void>
     act(() => { pending = result.current.loadMoreActivity() })

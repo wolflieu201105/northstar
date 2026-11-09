@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppClient } from '../../../shared/lib/supabase'
 import type { NavigationGuard } from '../../../shared/types/navigation'
-import { fetchTeamMembers } from '../../team/services/team'
+import { fetchMembers } from '../../groups/services/groups'
 import { fetchLabels, createLabel, updateLabel, archiveLabel, LabelNameConflictError } from '../services/labels'
 import { fetchTasks } from '../../tasks/services/tasks'
 import { useWorkspaceData } from '../../workspace/useWorkspaceData'
@@ -11,7 +11,7 @@ import { makeLabel, makeTask } from '../../../test/fixtures'
 import { TaskCard } from '../../tasks/components/TaskCard'
 import { LabelsPage } from './LabelsPage'
 
-vi.mock('../../team/services/team', () => ({ fetchTeamMembers: vi.fn(), createMember: vi.fn(), updateMember: vi.fn(), archiveMember: vi.fn() }))
+vi.mock('../../groups/services/groups', () => ({ fetchMembers: vi.fn(), createMember: vi.fn(), updateMember: vi.fn(), archiveMember: vi.fn() }))
 vi.mock('../services/labels', async (original) => ({ ...await original<typeof import('../services/labels')>(), fetchLabels: vi.fn(), createLabel: vi.fn(), updateLabel: vi.fn(), archiveLabel: vi.fn() }))
 vi.mock('../../tasks/services/tasks', () => ({ fetchTasks: vi.fn() }))
 vi.mock('@dnd-kit/react', () => ({ useDraggable: () => ({ ref: vi.fn(), handleRef: vi.fn(), isDragging: false }) }))
@@ -20,14 +20,14 @@ const label = makeLabel()
 const guards = new Set<NavigationGuard>()
 const registerGuard = (guard: NavigationGuard) => { guards.add(guard); return () => { guards.delete(guard) } }
 function Harness() {
-  const workspace = useWorkspaceData(client, 'user-1')
-  const tasks = useTasks(client, 'user-1', workspace)
+  const workspace = useWorkspaceData(client, 'user-1', 'group-1')
+  const tasks = useTasks(client, 'user-1', workspace, 'group-1')
   return <><LabelsPage workspace={workspace} tasks={tasks.tasks} tasksLoading={tasks.isLoading} taskError={tasks.loadError} registerGuard={registerGuard} />
     {tasks.tasks.map((task) => <TaskCard key={task.id} task={task} today={new Date()} isMoving={false} onEdit={vi.fn()} />)}</>
 }
 beforeEach(() => {
   vi.resetAllMocks(); guards.clear()
-  vi.mocked(fetchTeamMembers).mockResolvedValue([])
+  vi.mocked(fetchMembers).mockResolvedValue([])
   vi.mocked(fetchLabels).mockResolvedValue([label])
   vi.mocked(fetchTasks).mockResolvedValue([makeTask({ labels: [label] })])
 })
@@ -43,7 +43,7 @@ describe('Label management with canonical task chips', () => {
     fireEvent.click(screen.getByLabelText('Amber'))
     fireEvent.click(screen.getByRole('button', { name: 'Save label' }))
     await screen.findByRole('button', { name: 'Edit Feature' })
-    expect(updateLabel).toHaveBeenCalledWith(client, 'user-1', label.id, { name: 'Feature', color: '#c9892d' })
+    expect(updateLabel).toHaveBeenCalledWith(client, 'group-1', label.id, { name: 'Feature', color: '#c9892d' }, label.updated_at)
     const cardChips = screen.getByRole('group', { name: 'Task labels' })
     expect(within(cardChips).getByText('Feature').closest('.label-chip')).toHaveStyle({ backgroundColor: '#c9892d', color: '#111512' })
     expect(screen.getByText('1 tagged task')).toBeVisible()
@@ -94,7 +94,7 @@ describe('Label management with canonical task chips', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Restore existing label' }))
     await screen.findByRole('button', { name: 'Edit Bug' })
     expect(createLabel).toHaveBeenCalledOnce()
-    expect(archiveLabel).toHaveBeenCalledWith(client, 'user-1', label.id, false)
+    expect(archiveLabel).toHaveBeenCalledWith(client, 'group-1', label.id, false, label.updated_at)
     expect(screen.getByRole('button', { name: 'Active (1)' })).toBeEnabled()
   })
 })

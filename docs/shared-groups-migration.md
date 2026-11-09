@@ -1,17 +1,17 @@
 # Shared-group SQL setup — Phases 12–13
 
-The user approved discarding the old application database on November 9, 2026. The complete group backend is now prepared and tested locally. The agent has not applied it to hosted Supabase.
+The user approved discarding the old application database on November 9, 2026. The complete group backend was prepared and tested locally; the user subsequently reported its verification passed. The agent did not run the hosted reset.
 
-**The current frontend still uses the old private-workspace model.** You can install and verify the backend now, but the old board will no longer work against it until the account/group/frontend changes in Phases 14–16. Applying SQL alone does not add login screens or group navigation.
+**Phases 14–16 now use this backend.** The existing verified project needs no new SQL. Do not rerun the reset: it would erase new group work. Configure [native Auth and callback URLs](accounts-and-groups.md) and review the account/group screens.
 
 ## Your current project
 
-Read-only inspection found the old private model, without the group foundation/APIs. Use this path:
+The user confirmed the complete backend verification passed. The following is the original install/reset procedure, only for an intentional new installation or destructive reset:
 
 1. Open the intended Supabase project's **SQL Editor** and create a new query.
 2. Paste the **entire** [reset.sql](../supabase/reset.sql), including `begin;` and `commit;`, and run it once. It deletes Northstar application data and installs both the foundation and Phase 13 APIs in one transaction.
 3. In a separate query, paste and run [verify-phase13.sql](../supabase/verify-phase13.sql). This is read-only.
-4. Keep your existing project URL and public key in `.env.local` when using the same project. Authentication settings and the new account screens follow in Phase 14.
+4. Keep your existing project URL and public key in `.env.local` when using the same project. Configure native Auth using the [account guide](accounts-and-groups.md).
 
 You do not need to delete tables manually or run individual migration files after `reset.sql`. Never run the test fixtures in the hosted SQL Editor. Running the reset again deletes new group data too.
 
@@ -46,12 +46,12 @@ SQL Editor runs with administrative access; seeing rows there does not prove ord
 
 The model contains profiles, groups, memberships, invitations, tasks, labels, actual-user assignments, task-label links, comments, and activity. Same-group foreign keys prevent foreign relationships; an assignment requires active membership; pending invitations create no membership. Current active members share task editing and invitation powers. The current owner controls ownership transfer, other-member removal, and group deletion.
 
-Task saves, relationships, exact conflict tokens, and generated history are transactional. Guest registration later keeps the same UUID and work created in this model. Deleting a non-owner account keeps shared content and saved author names, while deleting a group/task cascades its children. No old board data is backfilled.
+Task saves, relationships, exact conflict tokens, and generated history are transactional. Guest registration keeps the same UUID and work created in this model. Deleting a non-owner account keeps shared content and saved author names, while deleting a group/task cascades its children. No old board data is backfilled.
 
 ## Files, validation, and editing
 
 The SQL modules under `supabase/sql/groups/` keep access checks, activity, group/invitation operations, task operations, and public API/policies separate. Run `supabase/scripts/build-schema.ps1` after editing them; it generates the complete schema, reset, and Phase 13 migration without running SQL.
 
-PostgreSQL 17 passed 76 access/mutation checks on each installation path, all 39 foundation checks, three two-connection race checks, and fresh/reset catalog parity. A full reset after shared operations and reapplying Phase 13 also passed. The local CLI advisor scan reported no issues. Tests use disposable databases with synthetic claims; the cluster was stopped and databases removed. Hosted schema/data/Auth settings and frontend code remain unchanged by the agent.
+PostgreSQL 17 passed 76 access/mutation checks on each installation path, all 39 foundation checks, three two-connection race checks, and fresh/reset catalog parity. A full reset after shared operations and reapplying Phase 13 also passed. The local CLI advisor scan reported no issues. Tests use disposable databases with synthetic claims; the cluster was stopped and databases removed. The database phase made no agent-hosted writes. The frontend is now integrated through Phase 16; native Auth settings and live multi-browser verification remain user checks.
 
 The [old database upgrade guide](database-upgrade.md), `preflight.sql`, `verify-phase3.sql`, and root private-schema test files are historical references, not the current install instructions. [verify-phase12.sql](../supabase/verify-phase12.sql) describes the earlier closed-foundation checkpoint; use the Phase 13 verifier after the complete backend is installed.

@@ -17,14 +17,14 @@ describe('TaskForm', () => {
   })
 
   it.each([false, true])('creates a task with the selected assignees (multiple: %s)', async (multiple) => {
-    const members = [makeMember(), makeMember({ id: 'member-2', name: 'Sam Taylor' }), makeMember({ id: 'member-3', name: 'Archived profile', archived_at: '2026-11-08T14:00:00Z' })]
+    const members = [makeMember(), makeMember({ id: 'member-2', username: 'sam', display_name: 'Sam Taylor' })]
     const onSave = vi.fn().mockResolvedValue(undefined)
     render(<TaskForm task={null} defaultStatus="todo" opener={null} onSave={onSave} onClose={vi.fn()}
       workspace={{ members, membersLoading: false, memberError: null, reloadMembers: vi.fn() }} />)
     expect(screen.queryByLabelText('Archived profile (Archived)')).not.toBeInTheDocument()
     expect(screen.getByText('Unassigned')).toBeVisible()
     fireEvent.change(screen.getByLabelText('Task title'), { target: { value: 'Task with team' } })
-    if (multiple) { fireEvent.click(screen.getByLabelText('Alex Lee')); fireEvent.click(screen.getByLabelText('Sam Taylor')) }
+    if (multiple) { fireEvent.click(screen.getByLabelText('Alex Lee (@alex_lee)')); fireEvent.click(screen.getByLabelText('Sam Taylor (@sam)')) }
     fireEvent.click(screen.getByRole('button', { name: 'Create task' }))
     await waitFor(() => expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ assigneeIds: multiple ? ['member-1', 'member-2'] : [] })))
   })

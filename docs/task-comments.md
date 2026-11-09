@@ -1,11 +1,11 @@
 # Task comments
 
-Phase 8 completes the comment flow introduced in the task-detail panel. It uses the installed `comments` table and existing guest session. No new SQL, dependencies, or environment variables are required.
+The comment flow introduced in Phase 8 now uses the Phase 13 group backend and real accounts. Phases 14–16 scope reads/writes to the selected group and actual task, with server-authored name snapshots. No additional SQL is needed for this frontend batch.
 
 ## Implemented
 
-- A separate comment list and composer keep discussion independent of task-field saves. Comments load only for an opened, owned task.
-- Comments display oldest first using the full-precision timestamp and UUID tie-breaker. Each entry shows You, plain-text content with line breaks, and an exact localized `<time>` value.
+- A separate comment list and composer keep discussion independent of task-field saves. Comments load only for an opened task in an accessible group.
+- Comments display oldest first using the full-precision timestamp and UUID tie-breaker. Each entry shows its saved author name, plain-text content with line breaks, and an exact localized `<time>` value.
 - Reads request 51 rows to display a 50-comment page and determine whether more exist. Timestamp/ID cursors retain microsecond precision. Overlapping results merge by ID without duplicate entries.
 - Initial loading, empty history, read errors, page loading, and page errors have distinct presentations. Retry loading more comments resumes the failed cursor; it does not restart at page one.
 - Newly posted comments remain visible when an older history response arrives or history is reloaded. If unread history precedes a recent post, Load more appears in that gap. Reload starts history at the first page while retaining confirmed local posts.
@@ -32,7 +32,7 @@ Long-history, failed-read, delayed-response, and uncertain-save cases are covere
 
 UI/store tests cover loading and read failures, safe text/timestamps, explicit post retry, validation boundaries, page retries, overlapping results, microsecond ordering, recent-post gaps, reload/read races, duplicate submission guards, newer drafts during pending saves, and guest/task isolation. Transport tests use the real Supabase query builder with mocked responses to verify task/owner filters, 50-row pagination, preserved cursors, normalized insert bodies, server timestamps, and uncertain-save reconciliation.
 
-Read-only hosted checks confirmed RLS, the body constraint, the owner/task foreign key with `ON DELETE CASCADE`, the pagination index, authenticated read/insert access, and absence of guest timestamp-insert/update/delete privileges. Unauthenticated SELECT access is not granted. No hosted comment records were written during this checkpoint. Live browser persistence, touch/keyboard behavior, real task-deletion cascade execution, and two-guest API isolation remain manual/Phase 18 checks.
+Read-only hosted checks confirmed RLS, the body constraint, the group/task foreign key with `ON DELETE CASCADE`, the pagination index, authenticated read/insert access, and absence of guest timestamp-insert/update/delete privileges. Unauthenticated SELECT access is not granted. No hosted comment records were written during this checkpoint. Live browser persistence, touch/keyboard behavior, real task-deletion cascade execution, and two-guest API isolation remain manual/Phase 18 checks.
 
 Local validation passes: `npm test -- --maxWorkers=2` (83 tests across 19 files), ESLint, and the TypeScript/production build. Comment components remain inside the lazy-loaded task-detail bundle.
 

@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppClient } from '../../../shared/lib/supabase'
-import { makeLabel, makeTask } from '../../../test/fixtures'
+import { makeLabel, makeMember, makeTask } from '../../../test/fixtures'
 import { fetchComments, createComment } from '../../comments/services/comments'
 import { fetchActivity } from '../../activity/services/activity'
 import type { NavigationGuard } from '../../../shared/types/navigation'
@@ -15,7 +15,7 @@ function panelProps() {
   const guards = new Set<NavigationGuard>()
   const onClose = vi.fn()
   return {
-    client, userId: task.user_id, task, isLoading: false, loadError: null, isTaskPending: false, opener: null,
+    client, userId: 'user-1', groupId: task.group_id, task, isLoading: false, loadError: null, isTaskPending: false, opener: null,
     registerGuard: (guard: NavigationGuard) => { guards.add(guard); return () => { guards.delete(guard) } },
     onClose: () => { if ([...guards].every((guard) => guard())) onClose() },
     closed: onClose, canLeave: () => [...guards].every((guard) => guard()),
@@ -142,12 +142,12 @@ describe('TaskDetailPanel', () => {
 
   it('saves multiple selections, permits archived removal, and keeps lookup failures independent', async () => {
     const props = panelProps()
-    const member = { id: 'member-1', user_id: task.user_id, name: 'Alex', avatar_color: '#20895b', archived_at: null, created_at: task.created_at, updated_at: task.updated_at }
-    const archived = { ...member, id: 'member-2', name: 'Morgan', archived_at: task.created_at }
-    const label = { id: 'label-1', user_id: task.user_id, name: 'Bug', color: '#c85058', archived_at: null, created_at: task.created_at, updated_at: task.updated_at }
-    render(<TaskDetailPanel {...props} task={{ ...task, assignees: [archived] }} workspace={{ ...props.workspace, members: [member, archived], labels: [label], memberError: 'Members could not refresh' }} />)
-    fireEvent.click(screen.getByLabelText('Alex'))
-    fireEvent.click(screen.getByLabelText('Morgan (Archived)'))
+    const member = makeMember({ display_name: 'Alex' })
+    const archived = makeMember({ id: 'member-2', display_name: 'Morgan', username: 'morgan' })
+    const label = makeLabel()
+    render(<TaskDetailPanel {...props} task={{ ...task, assignees: [archived] }} workspace={{ ...props.workspace, members: [member], labels: [label], memberError: 'Members could not refresh' }} />)
+    fireEvent.click(screen.getByLabelText('Alex (@alex_lee)'))
+    fireEvent.click(screen.getByLabelText('Morgan (@morgan) (Unavailable)'))
     fireEvent.click(screen.getByLabelText('Bug'))
     expect(screen.getByText('Members could not refresh')).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: 'Retry assignees' }))

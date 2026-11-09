@@ -1,6 +1,7 @@
 import type { AppClient } from '../../../shared/lib/supabase'
 import type { Label, LabelDraft } from '../types'
 import { labelNameKey, normalizeLabelDraft } from '../utils'
+import { isLabel } from '../validation'
 import { ServiceError, serviceError, unresolvedMutation } from '../../../shared/services/errors'
 
 export class LabelNameConflictError extends ServiceError {
@@ -11,48 +12,47 @@ export class LabelNameConflictError extends ServiceError {
     this.name = 'LabelNameConflictError'
   }
 }
-
-async function nameConflict(client: AppClient, userId: string, name: string) {
-  // Reuse the owned directory so punctuation in names is never treated as a filter pattern.
-  try {
-    const labels = await fetchLabels(client, userId)
-    return new LabelNameConflictError(labels.find((label) => labelNameKey(label.name) === labelNameKey(name)) ?? null)
-  } catch { return new LabelNameConflictError(null) }
-}
-
-export async function fetchLabels(client: AppClient, userId: string) {
-  const { data, error } = await client.from('labels').select('*').eq('user_id', userId).order('name').order('id')
+export async function fetchLabels(client: AppClient, groupId: string) {
+  const { data, error } = await client.from('labels').select('*').eq('group_id', groupId).order('name').order('id')
   if (error) throw serviceError(error)
   return data ?? []
 }
-export async function createLabel(client: AppClient, userId: string, draft: LabelDraft, id: string = crypto.randomUUID()) {
-  const input = normalizeLabelDraft(draft)
-  const { data, error } = await client.from('labels').insert({ ...input, id, user_id: userId }).select('*').single()
-  if (!error) return data
-  const problem = serviceError(error)
-  if (problem.uncertain || problem.code === '23505') {
-    const { data: saved, error: readError } = await client.from('labels').select('*').eq('user_id', userId).eq('id', id).maybeSingle()
-    if (!readError && saved && saved.name === input.name && saved.color === input.color) return saved
-    if (problem.uncertain) throw unresolvedMutation()
-  }
-  if (problem.code === '23505') throw await nameConflict(client, userId, input.name)
-  throw problem
-}
-export async function updateLabel(client: AppClient, userId: string, id: string, draft: LabelDraft) {
-  const input = normalizeLabelDraft(draft)
-  const { data, error } = await client.from('labels').update(input).eq('user_id', userId).eq('id', id).select('*').maybeSingle()
+async function save(client: AppClient, groupId: string, id: string, input: { name?: string; color?: string; archived?: boolean }, token?: string) {
+  const { data, error } = await client.rpc('save_label', {
+    p_group_id: groupId, p_label_id: id,
+    ...(input.name !== undefined ? { p_name: input.name } : {}),
+    ...(input.color !== undefined ? { p_color: input.color } : {}),
+    ...(input.archived !== undefined ? { p_archived: input.archived } : {}),
+    ...(token !== undefined ? { p_expected_updated_at: token } : {}),
+  })
   if (error) {
     const problem = serviceError(error)
-    if (problem.code === '23505') throw await nameConflict(client, userId, input.name)
+    if (problem.uncertain || (!token && ['23505', '40001'].includes(problem.code))) {
+      try {
+        const rows = await fetchLabels(client, groupId)
+        const row = rows.find((label) => label.id === id)
+        if (row && (input.name === undefined || row.name === input.name)
+          && (input.color === undefined || row.color === input.color)
+          && (input.archived === undefined || Boolean(row.archived_at) === input.archived)) return row
+      } catch { if (problem.uncertain) throw unresolvedMutation() }
+      if (problem.uncertain) throw unresolvedMutation()
+    }
+    if (problem.code === '23505') {
+      let existing: Label | null = null
+      try { existing = (await fetchLabels(client, groupId)).find((row) => labelNameKey(row.name) === labelNameKey(input.name ?? '')) ?? null } catch { /* Show a safe name conflict. */ }
+      throw new LabelNameConflictError(existing)
+    }
     throw problem
   }
-  if (!data) throw new Error('The label is no longer available.')
+  if (!isLabel(data) || data.group_id !== groupId) throw new Error('Invalid label response. Refresh labels.')
   return data
 }
-export async function archiveLabel(client: AppClient, userId: string, id: string, archived: boolean) {
-  const { data, error } = await client.from('labels').update({ archived_at: archived ? new Date().toISOString() : null })
-    .eq('user_id', userId).eq('id', id).select('*').maybeSingle()
-  if (error) throw serviceError(error)
-  if (!data) throw new Error('The label is no longer available.')
-  return data
+export async function createLabel(client: AppClient, groupId: string, draft: LabelDraft, id: string = crypto.randomUUID()) {
+  return save(client, groupId, id, normalizeLabelDraft(draft))
+}
+export async function updateLabel(client: AppClient, groupId: string, id: string, draft: LabelDraft, token: string) {
+  return save(client, groupId, id, normalizeLabelDraft(draft), token)
+}
+export function archiveLabel(client: AppClient, groupId: string, id: string, archived: boolean, token: string) {
+  return save(client, groupId, id, { archived }, token)
 }

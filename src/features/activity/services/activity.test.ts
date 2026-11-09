@@ -19,10 +19,10 @@ describe('activity read contracts', () => {
     const unknown = { ...rows[0], event_type: 'future_event', payload: { version: 7, raw: '<script>bad()</script>' } }
     const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(response([unknown, ...rows.slice(1)]))
     const cursor = { id: '00000000-0000-4000-8000-000000000000', createdAt: rows[0].created_at }
-    const page = await fetchActivity(clientWith(fetch), 'user-1', 'task-1', cursor)
+    const page = await fetchActivity(clientWith(fetch), 'group-1', 'task-1', cursor)
     const url = new URL(String(fetch.mock.calls[0][0]))
     expect(url.pathname).toBe('/rest/v1/task_activity')
-    expect(url.searchParams.get('user_id')).toBe('eq.user-1')
+    expect(url.searchParams.get('group_id')).toBe('eq.group-1')
     expect(url.searchParams.get('task_id')).toBe('eq.task-1')
     expect(url.searchParams.get('limit')).toBe('51')
     expect(url.searchParams.get('order')).toBe('created_at.asc,id.asc')
@@ -35,7 +35,7 @@ describe('activity read contracts', () => {
 
   it('reports a failed read without generating substitute events', async () => {
     const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(response({ message: 'History unavailable', code: '42501' }, 403))
-    await expect(fetchActivity(clientWith(fetch), 'user-1', 'task-1')).rejects.toThrow('History unavailable')
+    await expect(fetchActivity(clientWith(fetch), 'group-1', 'task-1')).rejects.toThrow('History unavailable')
     expect(fetch).toHaveBeenCalledOnce()
     expect(fetch.mock.calls[0][1]?.method).toBe('GET')
   })

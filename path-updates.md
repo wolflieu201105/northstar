@@ -6,11 +6,11 @@ Keep [path.md](path.md) as the original build plan and [README.md](README.md) as
 
 **November 9 fresh-start correction:** The user approved discarding existing application data. Phase 12 therefore supplies a clean group schema and a destructive reset, without importing old tasks or placeholder members. Guest registration must still preserve work created afterward. No hosted reset has been performed.
 
-**November 9 scope update:** The user confirmed email/password accounts, unique usernames for inviting registered users or guests, and shared editing/invitations for all active group members. See the [accepted collaboration design](docs/shared-groups-design.md). Phases 11–13 now provide the design and locally tested complete group backend. SQL setup is ready; Phase 14 account/frontend work is next. The previous final verification/release phases move from 11/12 to 18/19. [update_path.md](update_path.md) links here as the current update-path entry point.
+**November 9 scope update:** The user confirmed email/password accounts, unique usernames for inviting registered users or guests, and shared editing/invitations for all active group members. See the [accepted collaboration design](docs/shared-groups-design.md). Phases 11–16 now provide the design, user-verified group backend, and account/group/frontend implementation. Phase 17 Realtime is next; native email and multi-browser acceptance checks remain open. The previous final verification/release phases move from 11/12 to 18/19. [update_path.md](update_path.md) links here as the current update-path entry point.
 
 ## 1. High-level roadmap
 
-Follow this order. Finish each phase's **Done when** check before moving on. Stop after each numbered phase so the result can be reviewed before the next checkpoint. The seven original feature groups and the shared-group update are in scope; do not silently drop one to meet a time estimate.
+Follow this order. Finish each phase's **Done when** check before moving on. Stop after each numbered phase unless the user explicitly authorizes a batch. The user requested Phases 14–16 consecutively; stop after Phase 16 for review. The seven original feature groups and the shared-group update are in scope; do not silently drop one to meet a time estimate.
 
 | Phase | Main idea | Result |
 | --- | --- | --- |
@@ -529,7 +529,7 @@ Deliverables: [clean schema](supabase/schema.sql), [destructive reset migration]
 
 ### Phase 13 — Secure group access and mutations
 
-Owner: Codex | Status: Implemented locally — ready for SQL setup | Next action: User runs complete reset/verification when ready; Phase 14 accounts follows.
+Owner: Codex | Status: Implemented — user-reported SQL verification passed | Next action: Phases 14–16 frontend implementation and review below.
 
 Deliverables: [setup instructions](docs/shared-groups-migration.md), [security/API contract](docs/group-security.md), [complete reset](supabase/reset.sql), [clean schema](supabase/schema.sql), [Phase 13 migration](supabase/migrations/20261109075450_secure_shared_group_operations.sql), and [read-only verification](supabase/verify-phase13.sql). On November 9, 2026, 76 access/mutation checks passed on each fresh/reset path, 39 foundation checks passed, and three two-connection races passed. Reapplication, complete reset after shared operations, catalog parity, and local advisors passed. No hosted schema/data/Auth settings or frontend code changed. Native SQL claims exercise RLS/functions, not real JWT/HTTP Auth; managed installation checks remain in later verification.
 
@@ -555,53 +555,59 @@ Deliverables: [setup instructions](docs/shared-groups-migration.md), [security/A
 
 ### Phase 14 — Build accounts and guest registration
 
-Owner: ___ | Status: Not started | Next action: Regenerate schema types and implement the Auth/session/profile layer.
+Owner: Codex | Status: Implemented — local checks passed, hosted Auth/browser review pending | Next action: Configure native Auth and verify same-UUID registration/recovery using the account review guide.
+
+Deliverable: [Accounts and shared groups](docs/accounts-and-groups.md). Native Auth/session changes, resumable same-UUID guest conversion, profiles, PKCE callbacks, and password recovery are implemented. Auth/email settings were not changed by the agent. Mocked tests verify the flow; real confirmation/recovery delivery and another-browser login remain manual acceptance checks.
 
 #### 14.1 Add the account experience
 
-- [ ] Regenerate database types and add small account/profile services, validation, state, and UI in feature folders.
-- [ ] Replace one-time guest initialization with Auth change subscriptions; handle guest entry, login, registration, sign-out, session refresh/expiry, and account switching without stale cross-account data.
-- [ ] Show account ID, editable unique username, display name/color, and a clear Guest/Register account action.
-- [ ] Upgrade the current guest's identity through supported Supabase email linking, built-in verification, and password setup; verify the UUID remains unchanged and partial conversion can resume.
-- [ ] Handle duplicate username/email, expired confirmation, resend, weak password, lost network, and pending registration while retaining work and appropriate drafts.
-- [ ] Add existing-account email/password sign-in and deliberate account switching. Explain guest-work retention before leaving that identity; do not silently merge, delete, or transfer its groups.
-- [ ] Implement native password recovery and explicit confirmation/recovery completion for local/hosted URLs; do not auto-create a new guest during callbacks.
-- [ ] Document required manual-linking, email delivery, redirect, and Auth settings. Use Supabase-managed session persistence; never persist plaintext passwords, log tokens, or expose credentials/service secrets in profiles or Vite.
-- [ ] Review native password-security settings and leaked-password protection where the project plan supports it; the read-only hosted baseline flags that setting. No settings were changed during Phase 13.
+- [x] Regenerate database types and add small account/profile services, validation, state, and UI in feature folders.
+- [x] Replace one-time guest initialization with Auth change subscriptions; handle guest entry, login, registration, sign-out, session refresh/expiry, and account switching without stale cross-account data.
+- [x] Show account ID, editable unique username, display name/color, and a clear Guest/Register account action.
+- [x] Upgrade the current guest's identity through supported Supabase email linking, built-in verification, and password setup; verify the UUID remains unchanged and partial conversion can resume.
+- [x] Handle duplicate username/email, expired confirmation, resend, weak password, lost network, and pending registration while retaining work and appropriate drafts.
+- [x] Add existing-account email/password sign-in and deliberate account switching. Explain guest-work retention before leaving that identity; do not silently merge, delete, or transfer its groups.
+- [x] Implement native password recovery and explicit confirmation/recovery completion for local/hosted URLs; do not auto-create a new guest during callbacks.
+- [x] Document required manual-linking, email delivery, redirect, and Auth settings. Use Supabase-managed session persistence; never persist plaintext passwords, log tokens, or expose credentials/service secrets in profiles or Vite.
+- [x] Review native password-security settings and leaked-password protection where the project plan supports it; the read-only hosted baseline flags that setting. No settings were changed during Phase 13.
 
 **Done when:** A guest can register, keep the same identity/work, and log back in from another browser; sign-in, sign-out, and recovery produce correct session/profile state.
 
 ### Phase 15 — Build groups, invitations, and members
 
-Owner: ___ | Status: Not started | Next action: Add group selection and acceptance-based membership screens.
+Owner: Codex | Status: Implemented — local checks passed, two-browser review pending | Next action: Review invitation acceptance, group switching, and owner/member actions with two actual sessions.
+
+Deliverables: [Groups and invitation review](docs/accounts-and-groups.md#groups-and-invitations) and [real members](docs/team-members.md). Group creation/switching, recipient previews, paginated invitation states/actions, actual member lists, and ownership/leave/removal/deletion controls replace fictional profile creation.
 
 #### 15.1 Replace manually created identities
 
-- [ ] Add group services/state, group creation, a joined-groups page, and a header switcher with empty/loading/error/retry states.
-- [ ] Display the initial empty private group as an ordinary group that its members can share by invitation.
-- [ ] Replace Add member/name-color creation with Invite by exact username or account ID; display the resolved minimal identity before sending.
-- [ ] Add incoming and authorized sent invitation views with pending/accepted/declined/revoked/expired states, accept/decline/revoke actions, and safe retry.
-- [ ] Allow invitations to existing anonymous guest profiles as well as registered accounts; acceptance must occur under the actual invited identity.
-- [ ] Show actual group members and self-profile links; eliminate manual name/color identity creation.
-- [ ] Implement own leave and owner-only member removal, transfer, and confirmed group deletion, including the last-owner guard.
-- [ ] Extend supported navigation for Account, Groups, Members, Invitations, and `group=<UUID>` while preserving direct-link/error behavior and narrow-screen controls.
+- [x] Add group services/state, group creation, a joined-groups page, and a header switcher with empty/loading/error/retry states.
+- [x] Display the initial empty private group as an ordinary group that its members can share by invitation.
+- [x] Replace Add member/name-color creation with Invite by exact username or account ID; display the resolved minimal identity before sending.
+- [x] Add incoming and authorized sent invitation views with pending/accepted/declined/revoked/expired states, accept/decline/revoke actions, and safe retry.
+- [x] Allow invitations to existing anonymous guest profiles as well as registered accounts; acceptance must occur under the actual invited identity.
+- [x] Show actual group members and self-profile links; eliminate manual name/color identity creation.
+- [x] Implement own leave and owner-only member removal, transfer, and confirmed group deletion, including the last-owner guard.
+- [x] Extend supported navigation for Account, Groups, Members, Invitations, and `group=<UUID>` while preserving direct-link/error behavior and narrow-screen controls.
 
 **Done when:** Two independently signed-in users can join the same group through a recipient-accepted request, and one user can belong to and switch between multiple groups.
 
 ### Phase 16 — Scope task features to the active group
 
-Owner: ___ | Status: Not started | Next action: Move task lookups, board state, and detail operations to group-aware contracts.
+Owner: Codex | Status: Implemented — local checks passed, manual review pending | Next action: Review shared task work; stop here before Phase 17 Realtime.
+
+Deliverable: [Group-scoped workspace contract and review](docs/accounts-and-groups.md#group-scoped-workspace). Generated types match the installed schema; group RPCs/read filters, real author snapshots, identity/group/task isolation, exact conflict tokens, per-group filters/scroll, draft/pending guards, focus/manual/denied-access recovery, and shared board composition are implemented. All 162 tests in 32 files, ESLint, and the production build passed on November 9, 2026. Native email, real JWT/client access, and visual/touch checks remain manual/Phase 18; automatic Realtime updates remain Phase 17. No new SQL, dependencies, hosted mutations, or Auth setting changes were made in this batch.
 
 #### 16.1 Connect shared task work
 
-- [ ] Key stores, caches, requests, mutations, cursors, and selected details by Auth identity and group; ignore late responses from earlier groups/accounts.
-- [ ] Replace owner-only queries/RPC arguments with validated group-aware access for tasks, labels, assignments, comments, and history.
-- [ ] Populate assignment pickers from accepted active group members; reject pending, foreign-group, and inactive targets.
-- [ ] Show real author/actor names in comments/activity; preserve historic name snapshots, no-op semantics, and immutable history after renames/departures.
-- [ ] Scope filter options, summary totals, empty/error states, and task direct links to the active group. Restore filters/scroll per group without reusing foreign member/label IDs.
-- [ ] Run unsaved-draft/pending-operation guards when switching group/account and clear incompatible task overlays. Do not expose cached content after membership is lost.
-- [ ] Preserve guest UUID, group memberships, and newly created task/comment/history data when registering that guest.
-- [ ] Extend focused service, state, navigation, and composition tests for shared editing, two groups, rapid switching, stale reads, archived labels, member departures, and conflict handling.
+- [x] Key stores, caches, requests, mutations, cursors, and selected details by Auth identity and group; ignore late responses from earlier groups/accounts.
+- [x] Replace owner-only queries/RPC arguments with validated group-aware access for tasks, labels, assignments, comments, and history.
+- [x] Populate assignment pickers from accepted active group members; reject pending, foreign-group, and inactive targets.
+- [x] Show real author/actor names in comments/activity; preserve historic name snapshots, no-op semantics, and immutable history after renames/departures.
+- [x] Scope filter options, summary totals, empty/error states, and task direct links to the active group. Restore filters/scroll per group without reusing foreign member/label IDs.
+- [x] Run unsaved-draft/pending-operation guards when switching group/account and clear incompatible task overlays. Do not expose cached content after membership is lost.
+- [x] Preserve guest UUID, group memberships, and newly created task/comment/history data when registering that guest.
+- [x] Extend focused service, state, navigation, and composition tests for shared editing, two groups, rapid switching, stale reads, archived labels, member departures, and conflict handling.
 
 **Done when:** All existing task features work inside the selected group for any active member, with accurate attribution and no data mixing across groups or identities.
 

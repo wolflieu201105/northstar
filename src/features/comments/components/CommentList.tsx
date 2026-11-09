@@ -13,7 +13,7 @@ function CommentRows({ items, recent = false }: { items: TaskComment[]; recent?:
   if (!items.length) return null
   return <ol className="comment-list" aria-label={recent ? 'Your recent comments, oldest first' : 'Comments, oldest first'}>
     {items.map((comment) => <li key={comment.id}>
-      <div className="comment-meta"><strong>You</strong><Timestamp value={comment.created_at} /></div>
+      <div className="comment-meta"><strong>{comment.author_name}</strong><Timestamp value={comment.created_at} /></div>
       <p>{comment.body}</p>
     </li>)}
   </ol>

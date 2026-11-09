@@ -15,7 +15,7 @@ const middle = makeComment({ id: '00000000-0000-4000-8000-000000000002', body: '
 const latest = makeComment({ id: '00000000-0000-4000-8000-000000000003', body: 'Latest update', created_at: '2026-11-09T05:00:00.000003Z' })
 const cursor = { id: older.id, createdAt: older.created_at }
 function Harness() {
-  const details = useTaskDetails(client, 'user-1', 'task-1')
+  const details = useTaskDetails(client, 'user-1', 'task-1', undefined, 'group-1')
   return <TaskDiscussion details={details} disabled={false} />
 }
 
@@ -36,7 +36,7 @@ describe('Task comments', () => {
     const body = '<img src=x onerror=alert(1)>\nSecond line stays.'
     await act(async () => { finish({ items: [makeComment({ body })], nextCursor: null }) })
     const list = screen.getByRole('list', { name: 'Comments, oldest first' })
-    expect(within(list).getByText('You')).toBeVisible()
+    expect(within(list).getByText('Alex')).toBeVisible()
     expect(list.querySelector('p')?.textContent).toBe(body)
     expect(container.querySelector('img')).toBeNull()
     const time = list.querySelector('time')
@@ -79,7 +79,7 @@ describe('Task comments', () => {
     expect(screen.getByText('Latest update')).toBeVisible()
     fireEvent.click(screen.getByRole('button', { name: 'Retry loading more comments' }))
     await screen.findByText('Middle update')
-    expect(fetchComments).toHaveBeenNthCalledWith(3, client, 'user-1', 'task-1', cursor)
+    expect(fetchComments).toHaveBeenNthCalledWith(3, client, 'group-1', 'task-1', cursor)
     const list = screen.getByRole('list', { name: 'Comments, oldest first' })
     expect([...list.querySelectorAll('li > p')].map((item) => item.textContent)).toEqual(['Earlier update', 'Middle update', 'Latest update'])
     expect(screen.queryByRole('button', { name: 'Load more comments' })).not.toBeInTheDocument()

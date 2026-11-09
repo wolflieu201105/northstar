@@ -1,0 +1,22 @@
+.auth-entry { width: min(100% - 32px, 520px); margin: 56px auto; }
+.auth-entry h1 { font-size: clamp(28px, 5vw, 40px); margin: 12px 0 28px; letter-spacing: -.04em; }
+.account-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 24px; }
+.account-form { display: grid; gap: 16px; margin-bottom: 24px; padding: 24px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); }
+.account-form h2, .group-panel h2 { font-size: 18px; margin: 0; }
+.account-form p, .group-panel p { color: var(--muted-strong); line-height: 1.6; overflow-wrap: anywhere; }
+.account-form label, .group-panel label, .account-id label { display: grid; gap: 7px; font-size: 13px; font-weight: 600; }
+.account-form input, .account-form select, .group-panel input, .account-id input { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); }
+.account-form form { display: grid; gap: 14px; }
+.account-form .checkbox-label { display: flex; align-items: flex-start; gap: 10px; font-weight: 400; line-height: 1.6; }
+.account-form .checkbox-label input { width: auto; margin-top: 4px; flex: none; accent-color: var(--accent); }
+.form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.action-message { min-height: 1em; font-size: 13px; color: var(--accent-dark); overflow-wrap: anywhere; }
+.account-id { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; margin-bottom: 24px; }
+.account-id input { font-family: ui-monospace, monospace; }
+.registration-progress { padding: 14px; background: var(--accent-soft); border-radius: var(--radius-sm); }
+@media (max-width: 760px) {
+  .account-grid { grid-template-columns: 1fr; gap: 0; }
+  .account-id { grid-template-columns: 1fr auto; }
+  .account-id label { grid-column: 1 / -1; }
+  .account-form { padding: 20px; }
+}

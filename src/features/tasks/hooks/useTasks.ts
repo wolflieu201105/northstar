@@ -4,8 +4,8 @@ import type { Label } from '../../labels/types'
 import type { TeamMember } from '../../team/types'
 import { createTaskStore } from '../state/taskStore'
 
-export function useTasks(client: AppClient | null, userId: string | undefined, lookups?: { members: TeamMember[]; labels: Label[] }) {
-  const store = useMemo(() => createTaskStore(client, userId), [client, userId])
+export function useTasks(client: AppClient | null, userId: string | undefined, lookups?: { members: TeamMember[]; labels: Label[] }, groupId?: string, onAccessError?: () => void) {
+  const store = useMemo(() => createTaskStore(client, userId && groupId, onAccessError), [client, userId, groupId, onAccessError])
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot)
   useEffect(() => { store.start(); return () => store.stop() }, [store])
   const members = lookups?.members

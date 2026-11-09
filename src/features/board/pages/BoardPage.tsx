@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo } from 'react'
+import { lazy, Suspense, useLayoutEffect, useMemo } from 'react'
 import { AlertCircle } from 'lucide-react'
 import type { useTasks } from '../../tasks/hooks/useTasks'
 import type { useWorkspaceData } from '../../workspace/useWorkspaceData'
@@ -19,20 +19,25 @@ interface BoardPageProps {
   workspace: ReturnType<typeof useWorkspaceData>
   filters: BoardFilters
   isActive: boolean
+  groupName?: string
+  scrollPosition?: { left: number; top: number }
+  onScroll?: (position: { left: number; top: number }) => void
+  onRefresh?: () => void
   onCreate: (status?: TaskStatus) => void
   onOpenTask: (task: Task) => void
   onManageTeam: () => void
 }
 
-export function BoardPage({ taskState, workspace, filters, isActive, onCreate, onOpenTask, onManageTeam }: BoardPageProps) {
+export function BoardPage({ taskState, workspace, filters, isActive, onCreate, onOpenTask, onManageTeam, groupName, scrollPosition, onScroll, onRefresh }: BoardPageProps) {
   const { tasks, isLoading, loadError, reload, movingTaskIds, moveTask } = taskState
   const { query, priority } = filters
   const { members, labels, assignee, label, hasFilters } = useBoardFilters(filters, taskState, workspace)
   const today = useBoardDate()
+  useLayoutEffect(() => { if (isActive && scrollPosition) window.scrollTo(0, scrollPosition.top) }, [isActive, scrollPosition])
   const filteredTasks = useMemo(() => filterTasks(tasks, query, priority, { assignee, label }), [tasks, query, priority, assignee, label])
   return <>
     <section className="board-intro" aria-labelledby="board-title">
-      <div><span className="eyebrow">My workspace</span>
+      <div><span className="eyebrow">{groupName ?? "Active group"}</span>
         <h1 id="board-title" tabIndex={-1} data-view-active={isActive}>Shape the work. Ship with clarity.</h1>
         <p>Your focused view of what matters now, what needs attention, and what is done.</p></div>
       <BoardSummary tasks={tasks} today={today} isLoading={isLoading} loadError={loadError} />
@@ -41,7 +46,7 @@ export function BoardPage({ taskState, workspace, filters, isActive, onCreate, o
       onRetry={workspace.reloadMembers} onManage={onManageTeam} />
     <section className="board-panel" aria-label="Project tasks">
       <div className="board-panel-header">
-        <div className="board-panel-title"><h2>Project flow</h2>
+        <div className="board-panel-title"><h2>Project flow</h2>{onRefresh && <button className="text-button" onClick={onRefresh} disabled={isLoading}>Refresh group</button>}
           <span aria-live="polite">{isLoading ? 'Loading tasks…' : loadError ? 'Task counts unavailable' : `Showing ${filteredTasks.length} of ${tasks.length} tasks`}</span></div>
         <BoardToolbar filters={{ ...filters, assignee, label }} members={members} labels={labels} workspace={workspace} />
       </div>
@@ -51,7 +56,7 @@ export function BoardPage({ taskState, workspace, filters, isActive, onCreate, o
         <button className="button button-secondary" type="button" onClick={reload}>Retry</button>
       </div> : isLoading ? <BoardSkeleton /> : tasks.length === 0 ? <EmptyBoardState onCreate={() => onCreate()} />
         : <Suspense fallback={<BoardSkeleton />}>
-          <Board tasks={filteredTasks} allTasks={tasks} today={today} hasFilters={hasFilters} movingTaskIds={movingTaskIds}
+          <Board scrollPosition={scrollPosition} onScroll={isActive ? onScroll : undefined} tasks={filteredTasks} allTasks={tasks} today={today} hasFilters={hasFilters} movingTaskIds={movingTaskIds}
             onCreate={onCreate} onEdit={onOpenTask} onMove={(taskId, status) => void moveTask(taskId, status)} />
         </Suspense>}
     </section>

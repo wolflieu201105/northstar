@@ -1,0 +1,18 @@
+.app-header { flex-wrap: wrap; gap: 16px; }
+.workspace-nav { flex-wrap: wrap; }
+.header-actions { flex-wrap: wrap; gap: 10px; }
+.group-switcher { display: grid; gap: 4px; color: var(--muted); font-size: 11px; }
+.group-switcher select { max-width: 220px; min-width: 130px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--surface); font-size: 13px; }
+.guest-pill { cursor: pointer; max-width: 210px; }
+.guest-pill > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.header-error { width: 100%; font-size: 13px; color: var(--danger); }
+@media (max-width: 900px) {
+  .app-header .workspace-nav { order: 3; width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+  .app-header .workspace-nav button { flex-shrink: 0; }
+  .app-header .header-actions { margin-left: auto; }
+}
+@media (max-width: 600px) {
+  .app-header .header-actions { width: 100%; margin-left: 0; justify-content: space-between; }
+  .group-switcher select { max-width: 180px; }
+  .app-header .guest-pill { display: inline-flex; max-width: 160px; }
+}

@@ -17,8 +17,9 @@ function readRelationFilter(url: URL, key: string, emptyValue: string): Relation
 
 export function parseWorkspaceLocation(href: string) {
   const url = new URL(href, window.location.origin)
-  const requestedView = url.searchParams.get('view')
-  const view: WorkspaceView = requestedView === 'team' || requestedView === 'labels' ? requestedView : 'board'
+  const requestedView = url.searchParams.get('view') === 'team' ? 'members' : url.searchParams.get('view')
+  const view: WorkspaceView = ['members', 'labels', 'groups', 'invitations', 'account'].includes(requestedView ?? '') ? requestedView as WorkspaceView : 'board'
+  if (view !== 'board') url.searchParams.set('view', view)
   if (view === 'board') url.searchParams.delete('view')
   if (view !== 'board') url.searchParams.delete('task')
   if (!url.searchParams.get('task')) url.searchParams.delete('task')
@@ -30,13 +31,22 @@ export function parseWorkspaceLocation(href: string) {
   const label = readRelationFilter(url, 'label', 'unlabeled')
   return {
     href: `${url.pathname}${url.search}${url.hash}`,
-    view, taskId: url.searchParams.get('task'), query: url.searchParams.get('q') ?? '', priority, assignee, label,
+    view, groupId: url.searchParams.get('group'), taskId: url.searchParams.get('task'), query: url.searchParams.get('q') ?? '', priority, assignee, label,
   }
 }
 
 export function createNavigationStore() {
   const state = observable(parseWorkspaceLocation(window.location.href))
   const guards = new Set<NavigationGuard>()
+  const groupFilters = new Map<string, Record<string, string | string[] | null>>()
+  const scroll = new Map<string, { left: number; top: number }>()
+  function rememberFilters() {
+    const current = state.getSnapshot()
+    if (!current.groupId) return
+    groupFilters.set(current.groupId, { q: current.query, priority: current.priority === 'all' ? null : current.priority,
+      assignee: current.assignee === 'all' ? null : current.assignee === 'none' ? 'unassigned' : current.assignee,
+      label: current.label === 'all' ? null : current.label === 'none' ? 'unlabeled' : current.label })
+  }
   let index = Number(window.history.state?.northstarIndex) || 0
   let recovering = false
   const canLeave = () => [...guards].every((guard) => guard())
@@ -59,6 +69,7 @@ export function createNavigationStore() {
     }
     index = typeof nextIndex === 'number' ? nextIndex : index + 1
     writeIndex(next.href)
+    rememberFilters()
     state.update(next)
   }
   function change(patch: Record<string, string | string[] | null>, replace = false, force = false) {
@@ -76,11 +87,27 @@ export function createNavigationStore() {
     if (!force && !canLeave()) return false
     if (!replace) ++index
     window.history[replace ? 'replaceState' : 'pushState']({ ...window.history.state, northstarIndex: index }, '', next.href)
+    rememberFilters()
     state.update(next)
     return true
   }
   return {
-    ...state,
+    ...state, canLeave,
+    selectGroup(groupId: string | null, replace = false, force = false, keepView = false) {
+      const current = state.getSnapshot()
+      if (current.groupId === groupId) return keepView ? true : change({ view: null, task: null }, replace, force)
+      rememberFilters()
+      const initial = keepView && !current.groupId ? {
+        q: current.query, priority: current.priority === 'all' ? null : current.priority,
+        assignee: current.assignee === 'all' ? null : current.assignee === 'none' ? 'unassigned' : current.assignee,
+        label: current.label === 'all' ? null : current.label === 'none' ? 'unlabeled' : current.label,
+      } : undefined
+      const filters = (groupId ? groupFilters.get(groupId) : undefined) ?? initial
+      return change({ group: groupId, task: null, view: keepView ? state.getSnapshot().view : null,
+        q: null, priority: null, assignee: null, label: null, ...filters }, replace, force)
+    },
+    saveScroll(groupId: string, position: { left: number; top: number }) { scroll.set(groupId, position) },
+    getScroll(groupId: string) { return scroll.get(groupId) ?? { left: 0, top: 0 } },
     start() { writeIndex(state.getSnapshot().href); window.addEventListener('popstate', onPopState) },
     stop() { window.removeEventListener('popstate', onPopState) },
     registerGuard(guard: NavigationGuard) { guards.add(guard); return () => { guards.delete(guard) } },

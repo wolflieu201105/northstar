@@ -1,12 +1,12 @@
 # Current update path
 
-The full, numbered plan is maintained in [path-updates.md](path-updates.md) so the existing phase history and links remain intact.
+The full numbered plan remains in [path-updates.md](path-updates.md).
 
-- [Accounts and shared-group design — Phase 11](path-updates.md#phase-11--define-accounts-and-shared-group-behavior): current design checkpoint, with the user's confirmed account and collaboration choices.
-- [Schema and reset — Phase 12](docs/shared-groups-migration.md): implemented and locally tested; SQL is ready for review, not hosted application yet.
-- [Group access and atomic operations — Phase 13](docs/group-security.md): implemented and tested locally.
-- [SQL to run now](docs/shared-groups-migration.md): complete reset plus read-only verification.
-- [Accounts and guest registration — Phase 14](path-updates.md#phase-14--build-accounts-and-guest-registration): next implementation checkpoint.
-- [Detailed account, invitation, access, and migration contract](docs/shared-groups-design.md).
+- **Phases 12–13:** group SQL installed and verified by the user. [SQL guide](docs/shared-groups-migration.md).
+- **Phase 14:** accounts, self profiles, same-identity guest registration, native email confirmation, sign-in/out, and password recovery implemented.
+- **Phase 15:** groups, real members, invitation previews/acceptance, and ownership controls implemented.
+- **Phase 16:** board/tasks/labels/comments/activity scoped to the selected group; draft/conflict protection and identity/group state isolation implemented.
+- **Review now:** [Auth settings and the manual account/group checklist](docs/accounts-and-groups.md). No additional SQL is needed; do not rerun the destructive reset.
+- **Next implementation:** Phase 17, authorized Realtime synchronization and reconnect/periodic access recovery.
 
-Phases 11–17 introduce accounts and shared groups. The previous final verification and release steps move to Phases 18 and 19. Stop for review after each numbered checkpoint.
+The user authorized Phases 14–16 consecutively. Stop after Phase 16 for review. Local automated checks pass; actual email delivery, guest conversion/login across browsers, visual/touch behavior, and real JWT/API acceptance checks remain manual/Phase 18. Final release remains Phase 19.

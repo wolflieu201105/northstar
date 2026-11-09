@@ -1,28 +1,32 @@
 # Northstar Task Board
 
-Northstar is a responsive Kanban task manager built for frictionless guest use. A visitor is signed in anonymously through Supabase, receives a private workspace, and can create and move persistent tasks without completing a registration form.
+Northstar is a responsive Kanban task manager for shared groups. Visitors can start as guests, register that same identity with email/password, and invite other real accounts to collaborate. Each account starts with an empty private group and can join or create more groups.
 
 The interface uses a restrained black-and-green visual system and supports desktop and narrow-screen workflows.
 
 ## Project status
 
-- Private-workspace frontend: implemented and tested locally
-- Shared groups: database, permissions, and atomic APIs tested locally; account/group frontend integration pending
+- Accounts, groups, invitations, and group-scoped board: implemented through Phase 16; local tests/lint/build pass
+- Group SQL: user-reported verification passed; no new SQL needed for Phases 14–16
+- Native email delivery and real two-browser flows: manual verification pending
+- Realtime synchronization: Phase 17, not started
 - Live demo: pending deployment
 - Source repository: pending publication
 
 ## Features
 
-These describe the current private frontend. The shared-group backend is ready for SQL setup; its account and group screens follow in Phases 14–16.
+The current frontend uses the shared-group schema and checked APIs. See [Auth setup and the review checkpoint](docs/accounts-and-groups.md) before testing registration/recovery.
 
 - Automatic anonymous guest sessions that persist in the browser
-- Private task storage protected by Supabase Row Level Security
+- Group task storage protected by accepted membership and Supabase Row Level Security
+- Email/password login, same-identity guest registration, resumable native confirmation, recovery, and explicit sign-out
+- Globally unique usernames, copyable account IDs, editable self profiles, and real assignee identities
+- Group creation/switching, invitation previews and inboxes, recipient acceptance, leave/removal/ownership transfer/deletion
 - Four workflow columns: To Do, In Progress, In Review, and Done
 - Create, edit, and delete task flows
-- Board, Team, and Labels navigation with shareable task URLs and preserved filters
+- Board, Members, Labels, Groups, Invitations, and Account navigation with group/task URLs and per-group filters
 - Responsive task-detail panel with save-in-place editing and unsaved-draft protection
 - Select existing assignees/labels, post timestamped comments, and inspect persisted activity
-- Create, edit, archive, and restore team profiles with optional avatar colors
 - Assign multiple members during task creation/editing and display member avatars on cards
 - Create, rename, recolor, archive, and restore custom labels with duplicate-name recovery
 - Attach multiple labels during task creation/editing and expand label chips on cards
@@ -34,16 +38,16 @@ These describe the current private frontend. The shared-group backend is ready f
 - Overdue, due-today, and upcoming indicators that refresh at local midnight and on page resume
 - Neutral saved due dates for completed tasks
 - Combined search, priority, multiple-assignee, and multiple-label filters with removable chips
-- Unassigned/Unlabeled modes and archived options still linked to tasks
+- Unassigned/Unlabeled modes and archived labels still linked to tasks
 - Whole-board total, completed, and overdue summaries alongside filtered result counts
 - Loading, empty, configuration, error, retry, and save states
 - Responsive horizontal board navigation on narrow screens
 - Accessible labels, focus states, dialog behavior, and reduced-motion support
 - Lazy-loaded board and task form bundles
 
-The roadmap is in [path-updates.md](path-updates.md), also linked from [update_path.md](update_path.md). Phases 12–13 now provide the [complete group SQL setup](docs/shared-groups-migration.md) and [permission/API contract](docs/group-security.md). The approved reset discards old board data and keeps actual Auth accounts. Phase 14 adds login/registration next, followed by group/frontend integration. Final verification and release remain Phases 18–19.
+The roadmap is in [path-updates.md](path-updates.md), also linked from [update_path.md](update_path.md). Phases 14–16 implement accounts, groups, invitations, and scoped task work on the [Phase 13 API contract](docs/group-security.md). Phase 17 adds Realtime; final verification and release remain Phases 18–19.
 
-**Database transition:** The SQL can be installed now, but the old board will not work against the new backend until its group-aware integration. For the current project, run [reset.sql](supabase/reset.sql), then the read-only [verify-phase13.sql](supabase/verify-phase13.sql). No hosted reset has been performed by the agent.
+**Existing verified database:** No further SQL is needed for this frontend batch. Do not rerun the destructive reset. New installations can follow the [SQL setup guide](docs/shared-groups-migration.md); existing verified installations only need the [Auth configuration](docs/accounts-and-groups.md#supabase-auth-setup).
 
 ## Technology
 
@@ -74,8 +78,9 @@ The browser uses only a publishable Supabase key. Never place a secret key, serv
 1. Create or open a Supabase project.
 2. In Authentication settings, enable anonymous sign-ins.
 3. Open the SQL Editor.
-4. Follow the [group setup guide](docs/shared-groups-migration.md): use [`supabase/schema.sql`](supabase/schema.sql) for an empty project or [`supabase/reset.sql`](supabase/reset.sql) to discard the old application database. The current frontend needs the later integration before it can use this backend.
-5. Copy the project URL and a browser-safe publishable key.
+4. Follow the [group setup guide](docs/shared-groups-migration.md): use [`supabase/schema.sql`](supabase/schema.sql) for an empty project or [`supabase/reset.sql`](supabase/reset.sql) to discard the old application database. The current frontend targets this group backend.
+5. Configure Email/Password, manual linking, and allowed callback URLs using the [Auth guide](docs/accounts-and-groups.md#supabase-auth-setup).
+6. Copy the project URL and a browser-safe publishable key.
 
 The complete SQL includes group integrity, Auth profile initialization, RLS/grants, protected history, invitation/group operations, and atomic task APIs. Run [verify-phase13.sql](supabase/verify-phase13.sql) afterward. Historical private-workspace setup is superseded.
 
@@ -125,19 +130,21 @@ npm run build
 npm run preview
 ```
 
-The automated suite covers due-date rules, filtering, summaries, task-input normalization, form validation, task mutations, optimistic movement, and rollback behavior.
+The automated suite covers native Auth/callback behavior with mocks, group/invitation HTTP contracts, identity/group state isolation, access-loss and draft guards, task/comments/activity/label behavior, filters, dates, summaries, and rollback. Real email delivery, browser appearance, and real JWT isolation remain separate manual checks.
 
 ## Manual security verification
 
 Use two independent browser profiles so Supabase creates Guest A and Guest B.
 
-1. Create a different task as each guest.
-2. Confirm neither guest sees the other's task.
-3. Refresh both profiles and confirm each task persists.
-4. Move tasks between columns and confirm their statuses persist.
-5. Clear one profile's browser data and confirm it receives a new workspace.
+1. Check private-group isolation, then invite B to a shared group from A's Members page.
+2. Confirm B has no board access until B accepts in Invitations.
+3. Create/edit/assign/comment as both accounts; use explicit refresh between browsers.
+4. Register A's guest, complete native email/password setup, and confirm its UUID/work/memberships remain.
+5. Test account/group switching, drafts, recovery, ownership transfer, and removal while a detail is open.
 
-Clearing browser storage, signing out, or moving to another device loses access to an anonymous identity. Account recovery would require linking a permanent identity, which is outside this version's scope.
+Follow the [complete manual review checklist](docs/accounts-and-groups.md#manual-review-checkpoint).
+
+Register an anonymous guest before signing out or clearing browser storage to retain access from another browser. Signing into an existing account deliberately switches identity and does not merge guest work.
 
 ## Deploying to Vercel
 
@@ -150,7 +157,7 @@ The repository works with Vercel's Vite framework detection and requires no cust
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
 5. Apply them to Production and Preview as appropriate.
-6. Deploy, then test create, move, refresh, and guest isolation on the deployed URL.
+6. Add the deployed Auth callback URLs, then test login, registration, recovery, accepted membership, task persistence, and isolation on that URL.
 
 `VITE_*` variables are compiled into the browser bundle and are therefore public configuration. Vercel treats public-prefixed variables as Config values; do not use them for privileged credentials. Environment-variable changes require a new deployment.
 
@@ -162,10 +169,12 @@ The included [GitHub Actions workflow](.github/workflows/ci.yml) runs `npm ci`, 
 src/
   app/              Application shell, navigation, and workspace coordination
   features/
-    auth/           Guest-session startup
+    auth/           Native sessions, PKCE callbacks, guest conversion, and recovery
+    account/        Profile and account forms/services
+    groups/         Groups, memberships, invitations, ownership, and scoped state
     board/          Board layout, filters, summary, and loading/empty states
     tasks/          Task forms, cards, details, hooks, services, and stores
-    team/           Member management, avatars, and assignee controls
+    team/           Real-account avatars and assignee controls
     labels/         Label management, chips, and tagging controls
     comments/       Comment list, composer, and persistence
     activity/       Activity rendering, formatting, and validation
@@ -181,7 +190,7 @@ Edit source files under `src/`. `npm run build` regenerates `dist/` with hashed 
 
 ## Design decisions
 
-- Guest-first authentication removes signup friction while retaining per-user ownership.
+- Guest entry removes signup friction; native registration preserves its UUID and group work.
 - RLS is the security boundary; client-side filtering is only a usability aid.
 - Status changes save immediately after a drop and roll back if persistence fails.
 - Manual ordering within a column is intentionally excluded; tasks use stable creation-time ordering.
@@ -191,14 +200,12 @@ Edit source files under `src/`. `npm run build` regenerates `dist/` with hashed 
 ## Known limitations
 
 - Anonymous accounts cannot be recovered after their browser session is lost.
-- The current version has one board per guest and no shared collaboration model.
 - Dragging changes task status but does not persist arbitrary ordering within a column.
-- Cross-tab realtime synchronization is not included.
+- Shared updates require explicit refresh or focus revalidation; Realtime synchronization is the next phase.
 
 ## Future improvements
 
-- Link guest workspaces to permanent accounts
-- Add projects, invitations, and collaborative access policies
-- Add labels, assignees, comments, and activity history
+- Add authorized Realtime subscriptions and reconnect/periodic access recovery
+- Complete real-browser and real-JWT multi-user acceptance checks
 - Add persistent within-column ordering
 - Add end-to-end browser tests against a disposable Supabase project

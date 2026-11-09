@@ -1,12 +1,3 @@
-import { AVATAR_COLORS, MEMBER_NAME_MAX_LENGTH, type TeamMemberDraft } from './types'
-
-export function normalizeMemberDraft(draft: TeamMemberDraft): TeamMemberDraft {
-  const name = draft.name.trim()
-  if (!name || name.length > MEMBER_NAME_MAX_LENGTH) throw new Error(`Member names must contain 1–${MEMBER_NAME_MAX_LENGTH} characters.`)
-  if (draft.avatar_color !== null && !AVATAR_COLORS.includes(draft.avatar_color)) throw new Error('Choose an available avatar color.')
-  return { name, avatar_color: draft.avatar_color }
-}
-
 export function memberInitials(name: string) {
   return name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => Array.from(part)[0]).join('').toLocaleUpperCase() || '?'
 }

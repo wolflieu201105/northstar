@@ -22,8 +22,8 @@ function mergeRows<Row extends { id: string; created_at: string }>(old: Row[], i
     .sort(compareTimelineRows)
 }
 
-export function createDetailStore(client: AppClient | null, userId: string | undefined, taskId: string | null) {
-  const initiallyLoading = Boolean(client && userId && taskId)
+export function createDetailStore(client: AppClient | null, userId: string | undefined, taskId: string | null, groupId?: string, onAccessError?: () => void) {
+  const initiallyLoading = Boolean(client && userId && groupId && taskId)
   const state = observable<DetailState>({ comments: emptyList(initiallyLoading), activity: emptyList(initiallyLoading), commentDraft: '', isPosting: false, commentSaveError: null })
   const requests = { comments: 0, activity: 0 }
   const commentIntents = new Map<string, string>()
@@ -32,13 +32,13 @@ export function createDetailStore(client: AppClient | null, userId: string | und
   let posting = false
   let lastTaskRevision: string | undefined
   async function loadComments(more = false) {
-    if (!client || !userId || !taskId || !active) return
+    if (!client || !userId || !groupId || !taskId || !active) return
     const previous = state.getSnapshot().comments
     if (more && (previous.isLoading || !previous.nextCursor)) return
     const request = ++requests.comments
     state.update({ comments: { ...previous, isLoading: true, isLoadingMore: more, failedLoadMore: false, error: null } })
     try {
-      const page = await fetchComments(client, userId, taskId, more ? previous.nextCursor! : undefined)
+      const page = await fetchComments(client, groupId, taskId, more ? previous.nextCursor! : undefined)
       if (active && request === requests.comments) state.update((current) => ({ ...current,
         comments: {
           items: mergeRows(more ? current.comments.items : [...confirmedComments.values()], page.items),
@@ -46,30 +46,32 @@ export function createDetailStore(client: AppClient | null, userId: string | und
         },
       }))
     } catch (error) {
+      if (active && serviceError(error).code === '42501') onAccessError?.()
       if (active && request === requests.comments) state.update((current) => ({ ...current,
         comments: { ...current.comments, isLoading: false, isLoadingMore: false, failedLoadMore: more, error: serviceError(error).message },
       }))
     }
   }
   async function loadActivity(more = false) {
-    if (!client || !userId || !taskId || !active) return
+    if (!client || !userId || !groupId || !taskId || !active) return
     const previous = state.getSnapshot().activity
     if (more && (previous.isLoading || !previous.nextCursor)) return
     const request = ++requests.activity
     state.update({ activity: { ...previous, isLoading: true, isLoadingMore: more, failedLoadMore: false, error: null } })
     try {
-      const page = await fetchActivity(client, userId, taskId, more ? previous.nextCursor! : undefined)
+      const page = await fetchActivity(client, groupId, taskId, more ? previous.nextCursor! : undefined)
       if (active && request === requests.activity) state.update((current) => ({ ...current,
         activity: { items: mergeRows(more ? current.activity.items : [], page.items), nextCursor: page.nextCursor, isLoading: false, isLoadingMore: false, failedLoadMore: false, error: null },
       }))
     } catch (error) {
+      if (active && serviceError(error).code === '42501') onAccessError?.()
       if (active && request === requests.activity) state.update((current) => ({ ...current,
         activity: { ...current.activity, isLoading: false, isLoadingMore: false, failedLoadMore: more, error: serviceError(error).message },
       }))
     }
   }
   async function postComment() {
-    if (!active || !client || !userId || !taskId) throw new Error('Open a task in your guest workspace first.')
+    if (!active || !client || !userId || !groupId || !taskId) throw new Error('Open a task in an accessible group first.')
     if (posting) return
     const draft = state.getSnapshot().commentDraft
     let body: string
@@ -80,7 +82,8 @@ export function createDetailStore(client: AppClient | null, userId: string | und
     posting = true
     state.update({ isPosting: true, commentSaveError: null })
     try {
-      const saved = await createComment(client, userId, taskId, body, id)
+      const saved = await createComment(client, groupId, taskId, body, id, userId)
+      if (!active) return saved
       commentIntents.delete(body)
       confirmedComments.set(saved.id, saved)
       state.update((current) => ({ ...current,
@@ -89,7 +92,8 @@ export function createDetailStore(client: AppClient | null, userId: string | und
       }))
       return saved
     } catch (error) {
-      state.update({ commentSaveError: serviceError(error).message })
+      if (active && serviceError(error).code === '42501') onAccessError?.()
+      if (active) state.update({ commentSaveError: serviceError(error).message })
       throw error
     } finally { posting = false; state.update({ isPosting: false }) }
   }

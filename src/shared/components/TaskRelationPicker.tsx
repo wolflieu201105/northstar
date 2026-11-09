@@ -12,9 +12,10 @@ interface TaskRelationPickerProps {
   onManage?: () => void
   manageLabel?: string
   emptySelectionLabel?: string
+  unavailableLabel?: string
 }
 
-export function TaskRelationPicker({ title, options, selectedIds, isLoading, error, onChange, onRetry, onManage, manageLabel, emptySelectionLabel = 'None selected' }: TaskRelationPickerProps) {
+export function TaskRelationPicker({ title, options, selectedIds, isLoading, error, onChange, onRetry, onManage, manageLabel, emptySelectionLabel = 'None selected', unavailableLabel = 'Archived' }: TaskRelationPickerProps) {
   const id = useId()
   const [query, setQuery] = useState('')
   const normalizedQuery = query.trim().toLocaleLowerCase()
@@ -37,7 +38,7 @@ export function TaskRelationPicker({ title, options, selectedIds, isLoading, err
           <input id={`${id}-${option.id}`} type="checkbox" checked={checked} disabled={Boolean(option.archived_at) && !checked}
             onChange={() => onChange(checked ? selectedIds.filter((selected) => selected !== option.id) : [...selectedIds, option.id])} />
           <span className="color-dot" style={{ backgroundColor: option.color ?? 'var(--accent)' }} aria-hidden="true" />
-          <span>{option.name}{option.archived_at ? ' (Archived)' : ''}</span>
+          <span>{option.name}{option.archived_at ? ` (${unavailableLabel})` : ''}</span>
         </label>
       })}
     </div>

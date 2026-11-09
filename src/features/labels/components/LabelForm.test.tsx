@@ -6,6 +6,26 @@ import { LabelForm } from './LabelForm'
 
 const registerGuard = () => () => {}
 describe('LabelForm', () => {
+  it('retains a stale draft and requires explicit adoption of the latest label before another save', () => {
+    const baseline = makeLabel()
+    const latest = makeLabel({ name: 'Changed remotely', updated_at: '2026-11-09T14:00:00.123456Z' })
+    const save = vi.fn()
+    const useLatest = vi.fn()
+    const props = { label: baseline, onSave: save, onRestore: vi.fn(), onClose: vi.fn(), registerGuard, opener: null, onUseLatest: useLatest }
+    const { rerender } = render(<LabelForm {...props} labels={[baseline]} />)
+    fireEvent.change(screen.getByLabelText('Label name'), { target: { value: 'My draft' } })
+    rerender(<LabelForm {...props} labels={[latest]} />)
+    expect(screen.getByLabelText('Label name')).toHaveValue('My draft')
+    expect(screen.getByRole('button', { name: 'Save label' })).toBeDisabled()
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    fireEvent.click(screen.getByRole('button', { name: 'Use latest label' }))
+    expect(useLatest).not.toHaveBeenCalled()
+    confirm.mockReturnValue(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Use latest label' }))
+    expect(useLatest).toHaveBeenCalledWith(latest)
+    expect(save).not.toHaveBeenCalled()
+    confirm.mockRestore()
+  })
   it('rejects invalid names and case-insensitive active duplicates before writing', () => {
     const save = vi.fn()
     render(<LabelForm label={null} labels={[makeLabel()]} onSave={save} onRestore={vi.fn()} onClose={vi.fn()} registerGuard={registerGuard} opener={null} />)

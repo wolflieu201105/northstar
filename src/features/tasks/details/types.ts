@@ -10,6 +10,8 @@ export type Details = ReturnType<typeof useTaskDetails>
 export interface TaskDetailPanelProps {
   client: AppClient | null
   userId: string
+  groupId: string
+  onAccessError?: () => void
   task: TaskView | undefined
   isLoading: boolean
   loadError: string | null

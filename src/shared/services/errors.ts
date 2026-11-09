@@ -13,8 +13,8 @@ export function serviceError(error: unknown, fallback = 'The request failed.') {
   const network = /failed to fetch|network|fetch failed|timeout|timed out/i.test(message)
   return new ServiceError(
     code === '40001'
-      ? 'This task changed. Reload it and review your draft before saving again.'
-      : network ? 'We could not reach the task service. Check your connection and try again.' : message,
+      ? 'This record changed. Reload it and review your draft before saving again.'
+      : network ? 'We could not reach the service. Check your connection and try again.' : message,
     code,
     network,
   )

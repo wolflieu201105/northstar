@@ -1,2 +1,2 @@
-export type WorkspaceView = 'board' | 'team' | 'labels'
+export type WorkspaceView = 'board' | 'members' | 'labels' | 'groups' | 'invitations' | 'account'
 export type NavigationGuard = () => boolean

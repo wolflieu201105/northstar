@@ -23,5 +23,6 @@ export const supabase: AppClient | null = supabaseConfigError
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: false,
+        flowType: 'pkce',
       },
     })

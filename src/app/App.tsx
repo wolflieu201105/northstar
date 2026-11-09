@@ -1,23 +1,26 @@
-import { ConfigurationState, ErrorState, LoadingState } from '../shared/components/AppStates'
-import { supabase, supabaseConfigError } from '../shared/lib/supabase'
+import { ConfigurationState, LoadingState } from '../shared/components/AppStates'
+import { supabase, supabaseConfigError, type AppClient } from '../shared/lib/supabase'
+import { useAuthSession, type AuthController } from '../features/auth/useAuthSession'
+import { AuthEntry } from '../features/auth/AuthEntry'
 import { useWorkspaceController } from './hooks/useWorkspaceController'
 import { WorkspaceShell } from './components/WorkspaceShell'
 import { WorkspaceViews } from './components/WorkspaceViews'
 import { WorkspaceDialogs } from './components/WorkspaceDialogs'
 
-function App() {
-  const controller = useWorkspaceController(supabase)
-  const { session, isSessionLoading, sessionError, retrySession } = controller
-  if (supabaseConfigError) return <ConfigurationState />
-  if (isSessionLoading) return <LoadingState />
-  if (sessionError || !session) {
-    return <ErrorState title="We couldn't start your guest session."
-      message={sessionError ?? 'No active guest session was returned.'} onRetry={retrySession} />
-  }
-  return <WorkspaceShell userId={session.user.id} controller={controller}
-    dialogs={<WorkspaceDialogs client={supabase} userId={session.user.id} controller={controller} />}>
-    <WorkspaceViews userId={session.user.id} controller={controller} />
+function WorkspaceApp({ client, auth }: { client: AppClient; auth: AuthController }) {
+  const controller = useWorkspaceController(client, auth.session!)
+  return <WorkspaceShell controller={controller}>
+    <WorkspaceViews controller={controller} auth={auth} />
+    {controller.groupId && <WorkspaceDialogs client={client} userId={auth.session!.user.id} controller={controller} />}
   </WorkspaceShell>
 }
-
-export default App
+function ConnectedApp({ client }: { client: AppClient }) {
+  const auth = useAuthSession(client)
+  if (auth.isLoading) return <LoadingState />
+  if (!auth.session) return <AuthEntry auth={auth} />
+  return <WorkspaceApp key={auth.session.user.id} client={client} auth={auth} />
+}
+export default function App() {
+  if (supabaseConfigError || !supabase) return <ConfigurationState />
+  return <ConnectedApp client={supabase} />
+}

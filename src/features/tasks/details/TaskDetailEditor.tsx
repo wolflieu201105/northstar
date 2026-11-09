@@ -69,7 +69,7 @@ export function TaskDetailEditor({ task, details, workspace, isTaskPending, regi
         <AssigneePicker members={workspace.members} assignedMembers={task.assignees}
           selectedIds={edit.assigneeIds} isLoading={workspace.membersLoading} error={workspace.memberError}
           onChange={(assigneeIds) => { setEdit((current) => ({ ...current, assigneeIds })); setSavedMessage('') }}
-          onRetry={workspace.reloadMembers} onManage={() => onVisit('team')} />
+          onRetry={workspace.reloadMembers} onManage={() => onVisit('members')} />
         <LabelPicker labels={workspace.labels} linkedLabels={task.labels} selectedIds={edit.labelIds} isLoading={workspace.labelsLoading} error={workspace.labelError}
           onChange={(labelIds) => { setEdit((current) => ({ ...current, labelIds })); setSavedMessage('') }}
           onRetry={workspace.reloadLabels} onManage={() => onVisit('labels')} />

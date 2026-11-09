@@ -28,13 +28,13 @@ export function ConfigurationState() {
         </div>
       </div>
       <p className="state-note">
-        <Settings2 size={15} /> Database schema setup comes in the next checkpoint.
+        <Settings2 size={15} /> Follow the SQL and Auth setup instructions in the README.
       </p>
     </main>
   )
 }
 
-export function LoadingState({ message = 'Preparing your private board…' }: { message?: string }) {
+export function LoadingState({ message = 'Preparing your board…' }: { message?: string }) {
   return (
     <main className="centered-state" aria-live="polite">
       <div className="loading-orbit" aria-hidden="true">
@@ -42,7 +42,7 @@ export function LoadingState({ message = 'Preparing your private board…' }: { 
       </div>
       <span className="eyebrow">Northstar</span>
       <h1>{message}</h1>
-      <p>Your guest workspace will be ready in a moment.</p>
+      <p>Your account will be ready in a moment.</p>
     </main>
   )
 }

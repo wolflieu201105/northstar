@@ -11,12 +11,11 @@ interface AssigneePickerProps {
   onRetry: () => void
   onManage?: () => void
 }
-
 export function AssigneePicker({ members, assignedMembers = [], ...props }: AssigneePickerProps) {
-  const linked = new Set(assignedMembers.map((member) => member.id))
+  const active = new Set(members.map((member) => member.id))
   const options = [...new Map([...assignedMembers, ...members].map((member) => [member.id, member])).values()]
-    .filter((member) => !member.archived_at || linked.has(member.id) || props.selectedIds.includes(member.id))
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map((member) => ({ ...member, color: member.avatar_color }))
-  return <TaskRelationPicker {...props} title="Assignees" options={options} manageLabel="Manage team" emptySelectionLabel="Unassigned" />
+    .sort((a, b) => a.display_name.localeCompare(b.display_name))
+    .map((member) => ({ id: member.id, name: `${member.display_name} (@${member.username})`,
+      color: member.avatar_color, archived_at: active.has(member.id) ? null : 'unavailable' }))
+  return <TaskRelationPicker {...props} title="Assignees" options={options} manageLabel="Manage members" unavailableLabel="Unavailable" emptySelectionLabel="Unassigned" />
 }

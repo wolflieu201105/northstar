@@ -1,6 +1,6 @@
 # Workspace access and atomic mutations — Phase 3
 
-This records the historical private-workspace database contract, still used by the current frontend. The [Phase 12 group foundation](shared-groups-migration.md) replaces it after the approved reset; Phase 13 now provides group membership access and new atomic APIs; see the [current contract](group-security.md). These owner policies/RPCs must not be reapplied to the new group schema.
+This records the historical private-workspace contract. The user has verified the group backend, and the frontend is integrated through Phases 14–16. Use the [current group security/API contract](group-security.md), [data layer](data-layer.md), and [account/group setup](accounts-and-groups.md). The owner-only policies/RPCs below must not be reapplied.
 
 Apply the Phase 3 migration after the Phase 2 workspace migration. This checkpoint adds the database contract for the later frontend work; it does not add Team, Labels, Comments, or Activity screens yet.
 

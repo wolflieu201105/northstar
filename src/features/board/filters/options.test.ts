@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { makeLabel, makeMember } from '../../../test/fixtures'
+import { makeLabel } from '../../../test/fixtures'
 import { getFilterOptions, resolveFilter } from './options'
 
 describe('relationship filter options', () => {
   it('includes active options and archived options still linked to tasks, using current names', () => {
-    const active = makeMember()
-    const linked = makeMember({ id: 'linked', name: 'Old name', archived_at: '2026-11-09T00:00:00Z' })
-    const unlinked = makeMember({ id: 'unlinked', archived_at: '2026-11-09T00:00:00Z' })
+    const active = makeLabel()
+    const linked = makeLabel({ id: 'linked', name: 'Old name', archived_at: '2026-11-09T00:00:00Z' })
+    const unlinked = makeLabel({ id: 'unlinked', archived_at: '2026-11-09T00:00:00Z' })
     expect(getFilterOptions([active, { ...linked, name: 'New name' }, unlinked], [linked, linked]))
       .toEqual([active, { ...linked, name: 'New name' }])
   })

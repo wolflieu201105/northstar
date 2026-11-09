@@ -81,7 +81,6 @@ export function TaskCard({ task, today, isMoving, onEdit }: TaskCardProps) {
       <div className="task-assignees">
         {task.assignees.length > 0 ? <>
           <MemberAvatarStack members={task.assignees} />
-          {task.assignees.some((member) => member.archived_at) && <span className="archived-assignee-note">Includes archived</span>}
         </> : <span className="unassigned-label">Unassigned</span>}
       </div>
     </article>

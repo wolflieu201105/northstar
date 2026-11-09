@@ -4,6 +4,6 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 
 export const isNullableText = (value: unknown) => value === null || typeof value === 'string'
 
-export function isOwnedRow(value: unknown): value is Record<string, unknown> {
-  return isRecord(value) && ['id', 'user_id', 'created_at'].every((key) => typeof value[key] === 'string')
+export function isGroupRow(value: unknown): value is Record<string, unknown> {
+  return isRecord(value) && ['id', 'group_id', 'created_at'].every((key) => typeof value[key] === 'string')
 }

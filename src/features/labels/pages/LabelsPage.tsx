@@ -46,26 +46,26 @@ export function LabelsPage({ workspace, tasks, tasksLoading, taskError, register
     const archive = !label.archived_at
     archivePending.current = true; setPendingId(label.id); setError(null); setMessage('')
     try {
-      await workspace.setLabelArchived(label.id, archive)
+      await workspace.setLabelArchived(label.id, archive, label.updated_at)
       setMessage(`${label.name} ${archive ? 'archived. Existing task labels are retained.' : 'restored and available for tagging.'}`)
       window.requestAnimationFrame(() => headingRef.current?.focus({ preventScroll: true }))
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'The label could not be updated.') }
     finally { archivePending.current = false; setPendingId(null) }
   }
   return <section className="workspace-directory labels-page" aria-labelledby="workspace-title">
-    <div className="directory-intro team-page-intro"><div><span className="eyebrow">My workspace</span>
+    <div className="directory-intro team-page-intro"><div><span className="eyebrow">Active group</span>
       <h1 ref={headingRef} id="workspace-title" tabIndex={-1} data-view-active="true">Labels</h1>
-      <p>Group related work with labels that belong to this private workspace.</p></div>
+      <p>Group related work with labels that belong to this group.</p></div>
       <button className="button button-primary" type="button" disabled={locked} onClick={() => openEditor(null)}><Plus size={17} />Add label</button>
     </div>
-    {editor && <LabelForm key={editor.label?.id ?? 'new-label'} label={editor.label} labels={workspace.labels}
+    {editor && <LabelForm key={editor.label ? `${editor.label.id}:${editor.label.updated_at}` : 'new-label'} label={editor.label} labels={workspace.labels}
       opener={editor.opener} registerGuard={registerGuard} onClose={() => setEditor(null)}
-      onReloadLabels={workspace.reloadLabels}
+      onReloadLabels={workspace.reloadLabels} onUseLatest={(label) => setEditor({ label, opener: editor.opener })}
       onSave={async (draft) => {
-        const saved = editor.label ? await workspace.editLabel(editor.label.id, draft) : await workspace.addLabel(draft)
+        const saved = editor.label ? await workspace.editLabel(editor.label.id, draft, editor.label.updated_at) : await workspace.addLabel(draft)
         setMessage(`${saved.name} ${editor.label ? 'updated' : 'added to your labels'}.`)
       }} onRestore={async (label) => {
-        const saved = await workspace.setLabelArchived(label.id, false)
+        const saved = await workspace.setLabelArchived(label.id, false, label.updated_at)
         setFilter('active'); setMessage(`${saved.name} restored with its saved name, color, and task links.`)
       }} />}
     <p className="team-action-message" role="status" aria-live="polite">{message}</p>
