@@ -1,0 +1,138 @@
+.activity-timeline {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.activity-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.activity-heading h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+}
+
+.activity-heading span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.activity-heading .button {
+  min-height: 36px;
+  font-size: 12px;
+}
+
+.activity-list {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity-list:empty {
+  display: none;
+}
+
+.activity-list li {
+  position: relative;
+  min-width: 0;
+  padding: 0 0 14px 21px;
+  border-bottom: 1px solid var(--line);
+}
+
+.activity-list li::before {
+  position: absolute;
+  top: 5px;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  content: '';
+}
+
+.activity-list p {
+  margin: 0 0 5px;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.activity-list .activity-context {
+  color: var(--muted-strong);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.activity-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.activity-details {
+  margin-top: 10px;
+}
+
+.activity-details summary {
+  width: fit-content;
+  border-radius: 3px;
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.activity-details summary:focus-visible {
+  outline: 2px solid var(--accent-dark);
+  outline-offset: 3px;
+}
+
+.activity-details dl {
+  display: grid;
+  gap: 14px;
+  margin: 12px 0 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+
+.activity-change dt {
+  margin-bottom: 7px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.activity-change dd {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 8px;
+  margin: 5px 0 0;
+}
+
+.activity-change dd > span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.activity-change dd p {
+  margin: 0;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.activity-pagination {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}

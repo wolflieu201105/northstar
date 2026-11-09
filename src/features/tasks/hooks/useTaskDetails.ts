@@ -12,6 +12,7 @@ export function useTaskDetails(client: AppClient | null, userId: string | undefi
     reloadComments: () => store.loadComments(), loadMoreComments: () => store.loadComments(true),
     retryComments: store.retryComments,
     reloadActivity: () => store.loadActivity(), loadMoreActivity: () => store.loadActivity(true),
+    retryActivity: store.retryActivity,
     setCommentDraft: store.setCommentDraft, postComment: store.postComment,
   }
 }

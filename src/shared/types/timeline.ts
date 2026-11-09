@@ -14,3 +14,8 @@ export interface TimelineListState<Row> {
   isLoading: boolean
   error: string | null
 }
+
+export interface PaginatedTimelineState<Row> extends TimelineListState<Row> {
+  isLoadingMore: boolean
+  failedLoadMore: boolean
+}

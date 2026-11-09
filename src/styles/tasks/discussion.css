@@ -31,7 +31,7 @@
   padding: 24px 28px 32px;
 }
 
-.comment-list, .activity-list {
+.comment-list {
   display: grid;
   gap: 14px;
   margin: 0;
@@ -39,7 +39,7 @@
   list-style: none;
 }
 
-.comment-list:empty, .activity-list:empty {
+.comment-list:empty {
   display: none;
 }
 
@@ -63,7 +63,7 @@
   color: var(--accent-dark);
 }
 
-.comment-list time, .activity-list time {
+.comment-list time {
   color: var(--muted);
   font-size: 11px;
 }
@@ -73,30 +73,6 @@
   font-size: 13px;
   line-height: 1.6;
   white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.activity-list li {
-  position: relative;
-  padding: 0 0 14px 21px;
-  border-bottom: 1px solid var(--line);
-}
-
-.activity-list li::before {
-  position: absolute;
-  top: 5px;
-  left: 0;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--accent);
-  content: '';
-}
-
-.activity-list p {
-  margin: 0 0 5px;
-  font-size: 13px;
-  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 

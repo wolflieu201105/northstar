@@ -1,4 +1,5 @@
 import type { Task, TaskPriority, TaskStatus } from './types'
+import type { RelationFilter } from '../../shared/types/filters'
 
 export type DueState = 'overdue' | 'today' | 'upcoming' | 'later' | null
 
@@ -16,7 +17,9 @@ export function getDueState(
 
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const due = toLocalCalendarDate(dueDate)
-  const days = Math.round((due.getTime() - today.getTime()) / 86_400_000)
+  // Compare calendar ordinals so 23/25-hour daylight-saving days count as one day.
+  const days = (Date.UTC(due.getFullYear(), due.getMonth(), due.getDate()) -
+    Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) / 86_400_000
 
   if (days < 0) return 'overdue'
   if (days === 0) return 'today'
@@ -29,7 +32,21 @@ export function formatDueDate(value: string) {
   return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date)
 }
 
-export function filterTasks<TaskType extends Task>(tasks: TaskType[], query: string, priority: TaskPriority | 'all') {
+interface FilterableTask extends Task {
+  assignees?: { id: string }[]
+  labels?: { id: string }[]
+}
+
+function matchesRelation(rows: { id: string }[] = [], selection: RelationFilter = 'all') {
+  if (selection === 'all' || Array.isArray(selection) && selection.length === 0) return true
+  if (selection === 'none') return rows.length === 0
+  return rows.some((row) => selection.includes(row.id))
+}
+
+export function filterTasks<TaskType extends FilterableTask>(
+  tasks: TaskType[], query: string, priority: TaskPriority | 'all',
+  relations: { assignee?: RelationFilter; label?: RelationFilter } = {},
+) {
   const normalizedQuery = query.trim().toLocaleLowerCase()
 
   return tasks.filter((task) => {
@@ -38,7 +55,8 @@ export function filterTasks<TaskType extends Task>(tasks: TaskType[], query: str
       task.title.toLocaleLowerCase().includes(normalizedQuery) ||
       task.description?.toLocaleLowerCase().includes(normalizedQuery)
     const matchesPriority = priority === 'all' || task.priority === priority
-    return Boolean(matchesQuery && matchesPriority)
+    return Boolean(matchesQuery && matchesPriority &&
+      matchesRelation(task.assignees, relations.assignee) && matchesRelation(task.labels, relations.label))
   })
 }
 

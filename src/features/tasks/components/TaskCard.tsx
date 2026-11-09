@@ -7,6 +7,7 @@ import { TaskLabelChips } from '../../labels/components/TaskLabelChips'
 
 interface TaskCardProps {
   task: TaskView
+  today: Date
   isMoving: boolean
   onEdit: (task: Task) => void
 }
@@ -18,14 +19,14 @@ const dueLabels = {
   later: 'Due',
 }
 
-export function TaskCard({ task, isMoving, onEdit }: TaskCardProps) {
+export function TaskCard({ task, today, isMoving, onEdit }: TaskCardProps) {
   const { ref, handleRef, isDragging } = useDraggable({
     id: `task:${task.id}`,
     type: 'task',
     data: { taskId: task.id },
     disabled: isMoving,
   })
-  const dueState = getDueState(task.due_date, task.status)
+  const dueState = getDueState(task.due_date, task.status, today)
 
   return (
     <article
@@ -65,11 +66,11 @@ export function TaskCard({ task, isMoving, onEdit }: TaskCardProps) {
       <TaskLabelChips labels={task.labels} />
 
       <div className="task-card-footer">
-        {task.due_date && dueState ? (
-          <span className={`due-date due-${dueState}`}>
+        {task.due_date ? (
+          <span className={`due-date due-${dueState ?? 'later'}`}>
             <CalendarDays size={14} aria-hidden="true" />
             <span>
-              {dueLabels[dueState]} · {formatDueDate(task.due_date)}
+              {dueLabels[dueState ?? 'later']} · <time dateTime={task.due_date}>{formatDueDate(task.due_date)}</time>
             </span>
           </span>
         ) : (

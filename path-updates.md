@@ -291,7 +291,7 @@ Deliverable: [Navigation and task-detail guide](docs/navigation-and-task-details
 
 ### Phase 6 — Build team members and multiple assignees
 
-Owner: Codex | Status: Implemented — checkpoint accepted | Next action: Keep live persistence/history checks in the verification phase; Phase 7 is ready for review.
+Owner: Codex | Status: Complete | Next action: Assignment save/refresh/history is user-verified; retain remaining mobile/isolation checks in Phase 11.
 
 Deliverable: [Team member and assignee guide](docs/team-members.md). Inline create/edit forms, archive/restore views, assignment counts, board/card avatars, and searchable multi-assignment on creation/edit are implemented. Existing task links survive archival. Hosted constraints and table access were checked read-only; no new SQL or hosted data writes were needed. Live refresh/history and browser interaction checks remain below for this checkpoint.
 
@@ -312,7 +312,7 @@ Deliverable: [Team member and assignee guide](docs/team-members.md). Inline crea
 - [x] Display a small avatar stack on cards; expose full assignee names through accessible text and an overflow indicator.
 - [x] Keep archived assignees visible with an archived marker until removed; prevent adding archived members.
 - [x] Propagate member renames/colors to cards and pickers without changing historical event snapshots.
-- [ ] Verify assignment additions/removals produce the expected activity and survive refresh.
+- [x] Verify assignment additions/removals produce the expected activity and survive refresh. User confirmed this browser check on November 9, 2026.
 
 **Done when:** A guest can manage members and persist several assignees per task, with consistent avatars on the board and accurate assignment history.
 
@@ -343,7 +343,7 @@ Deliverable: [Label and task-tagging guide](docs/labels-and-tags.md). Label crea
 
 ### Phase 8 — Add persistent task comments
 
-Owner: Codex | Status: Implemented — ready for checkpoint review | Next action: Review comment persistence, failed requests, and long history before Phase 9 timeline improvements.
+Owner: Codex | Status: Implemented — checkpoint accepted | Next action: Retain live comment persistence/isolation checks in Phase 11; Phase 9 is ready for review.
 
 Deliverable: [Task comments guide](docs/task-comments.md). Separate list/composer components, explicit post/page retries, validation, precise chronological ordering, recent-post gaps, reload recovery, and draft/identity isolation are implemented. Hosted table constraints, grants, index, and cascade configuration were checked read-only. No new SQL or hosted comment writes were needed; live browser persistence/deletion and guest API isolation remain manual/Phase 11 checks.
 
@@ -371,13 +371,15 @@ Deliverable: [Task comments guide](docs/task-comments.md). Separate list/compose
 
 ### Maintenance checkpoint — Organize source and styles
 
-Owner: Codex | Status: Implemented — ready for review | Next action: Review the refactor before continuing to Phase 9.
+Owner: Codex | Status: Complete | Next action: Continue feature work through the Phase 9 checkpoint.
 
 Deliverable: [Architecture and style guide](docs/architecture.md). Feature folders now contain their UI, data operations, types, and colocated tests. The app shell, board page, task-detail editor, and activity view have separate responsibilities. CSS uses small ordered modules; a comparison confirms that all 324 original rules, declarations, and media queries retain their cascade order. This checkpoint adds no feature behavior, SQL changes, or dependencies.
 
 ### Phase 9 — Display the task activity timeline
 
-Owner: ___ | Status: Not started | Next action: Complete typed event formatting, relative timestamps, and timeline recovery using the existing persisted-event view.
+Owner: Codex | Status: Implemented — core browser checks passed | Next action: Clock/mobile and longer-history browser checks remain; Phase 10 is the next implementation checkpoint.
+
+Deliverable: [Task activity guide](docs/task-activity.md). Typed summaries and old/new values, saved name snapshots, guest actor labels, safe fallbacks, relative-time updates, manual refresh, and same-cursor page retry are implemented in feature-specific modules. Existing local SQL suites pass fresh/upgrade checks for no-ops, rollback, history protection, task deletion, and auth cleanup. Hosted configuration was checked read-only; no new SQL or hosted data changes were required. Real guest API isolation and browser persistence/interaction remain manual/Phase 11 checks.
 
 #### 9.1 Define readable event rendering
 
@@ -389,41 +391,53 @@ Owner: ___ | Status: Not started | Next action: Complete typed event formatting,
 | `assignee_added` / `assignee_removed` | Assigned Alex / Removed Alex · 40 minutes ago |
 | `label_added` / `label_removed` | Added Bug / Removed Design · 15 minutes ago |
 
-- [ ] Render event payloads through typed formatter functions, not stored HTML.
-- [ ] Use stored old/new values and member/label name snapshots for historical text.
-- [ ] Do not call a guest-managed member the actor; display the authenticated guest as the actor.
-- [ ] Provide a safe fallback for an unknown event type or older payload version.
+- [x] Render event payloads through typed formatter functions, not stored HTML.
+- [x] Use stored old/new values and member/label name snapshots for historical text.
+- [x] Do not call a guest-managed member the actor; display the authenticated guest as the actor.
+- [x] Provide a safe fallback for an unknown event type or older payload version.
 
 #### 9.2 Build timeline behavior
 
-- [ ] Show Activity oldest first with stable timestamp/ID ordering and Load more pagination.
-- [ ] Display relative time plus an accessible exact local timestamp.
-- [ ] Refresh relative labels while the panel is open and clean up timers on close.
-- [ ] Refetch affected history after field edits, drag status changes, assignment changes, and label changes.
-- [ ] Show an explicit baseline message for tasks that existed before history capture was enabled.
-- [ ] Confirm a no-op save produces no event, while a failed or rolled-back mutation produces no success event.
-- [ ] Verify parent-task deletion and auth-user cleanup succeed without orphaned history or trigger errors.
+- [x] Show Activity oldest first with stable timestamp/ID ordering and Load more pagination.
+- [x] Display relative time plus an accessible exact local timestamp.
+- [x] Refresh relative labels while the panel is open and clean up timers on close.
+- [x] Refetch affected history after field edits, drag status changes, assignment changes, and label changes.
+- [x] Show an explicit baseline message for tasks that existed before history capture was enabled.
+- [x] Confirm a no-op save produces no event, while a failed or rolled-back mutation produces no success event. Native local SQL and client synchronization tests cover these cases.
+- [x] Verify parent-task deletion and auth-user cleanup succeed without orphaned history or trigger errors. Native local SQL covers both paths; real JWT/API verification remains in Phase 11.
+
+#### 9.3 User-reported browser verification
+
+Confirmed by the user on November 9, 2026:
+
+- [x] Add/remove an assignee, save, refresh, and verify the recorded names.
+- [x] Move task status and edit fields; confirm Activity and View changes show the correct history.
+- [x] Go offline before saving; confirm the draft remains and no success event appears.
+
+Clock/mobile, longer-history pagination/retry, and live cleanup checks remain in the [activity review guide](docs/task-activity.md). Real cross-guest JWT/API isolation remains in Phase 11.
 
 **Done when:** The timeline reflects committed database changes accurately, survives refresh, and cannot be rewritten through guest access.
 
 ### Phase 10 — Complete filters, due dates, and summaries
 
-Owner: ___ | Status: Not started | Next action: Extend existing utilities and toolbar controls.
+Owner: Codex | Status: Implemented — ready for browser review | Next action: Review this checkpoint before Phase 11.
+
+Deliverable: [Board filters, dates, and summary review](docs/board-filters.md). On November 9, 2026, all 135 tests across 30 files, ESLint, and the TypeScript/production build passed. The focused 34-test run also passed with `TZ=America/New_York`, covering daylight-saving boundaries. Browser appearance, keyboard/touch interaction, and real tab suspension remain review checks. No SQL, dependencies, or hosted data changed in this checkpoint.
 
 #### 10.1 Combine search and filters
 
-- [ ] Retain the existing search bar: title matches are required, and the existing description-search behavior may remain.
-- [ ] Keep case-insensitive, trimmed search and the current priority filter.
-- [ ] Add an assignee filter with All, Unassigned, and selected member IDs.
-- [ ] Add a label filter with All, Unlabeled, and selected label IDs.
-- [ ] Match ANY selected member within the assignee filter and ANY selected label within the label filter.
-- [ ] Combine search, priority, assignee, and label groups using AND.
-- [ ] Keep archived records available as filter options if they are still attached to tasks; visibly mark them archived.
-- [ ] Add active-filter chips and one Clear filters action that resets every group.
-- [ ] Derive visible tasks from canonical data; filtering must not remove hidden tasks or their relationships.
-- [ ] Keep column counts explicit, such as `2 of 6`, and distinguish no matches from an empty workspace.
-- [ ] Preserve filters through task details and management navigation using supported query parameters.
-- [ ] Ignore unknown/deleted filter IDs gracefully and keep the controls usable on mobile.
+- [x] Retain the existing search bar: title matches are required, and the existing description-search behavior may remain.
+- [x] Keep case-insensitive, trimmed search and the current priority filter.
+- [x] Add an assignee filter with All, Unassigned, and selected member IDs.
+- [x] Add a label filter with All, Unlabeled, and selected label IDs.
+- [x] Match ANY selected member within the assignee filter and ANY selected label within the label filter.
+- [x] Combine search, priority, assignee, and label groups using AND.
+- [x] Keep archived records available as filter options if they are still attached to tasks; visibly mark them archived.
+- [x] Add active-filter chips and one Clear filters action that resets every group.
+- [x] Derive visible tasks from canonical data; filtering must not remove hidden tasks or their relationships.
+- [x] Keep column counts explicit, such as `2 of 6`, and distinguish no matches from an empty workspace.
+- [x] Preserve filters through task details and management navigation using supported query parameters.
+- [x] Ignore unknown/deleted filter IDs gracefully and keep the controls usable on mobile.
 
 #### 10.2 Finish due-date behavior
 
@@ -436,19 +450,19 @@ Owner: ___ | Status: Not started | Next action: Extend existing utilities and to
 | Completed task | Neutral saved due date, with no urgency warning. | No |
 | No due date | No due date state. | No |
 
-- [ ] Reuse the existing `getDueState` and `formatDueDate` utilities; do not parse a date-only string as UTC midnight.
-- [ ] Verify calendar-date comparisons across month/year boundaries and daylight-saving changes.
-- [ ] Update urgency at local midnight and when the page becomes visible after being backgrounded; clear timers/listeners on unmount.
-- [ ] Keep urgency text/icons alongside color and expose an understandable accessible label.
-- [ ] Update urgency immediately after due-date or status changes.
+- [x] Reuse the existing `getDueState` and `formatDueDate` utilities; do not parse a date-only string as UTC midnight.
+- [x] Verify calendar-date comparisons across month/year boundaries and daylight-saving changes.
+- [x] Update urgency at local midnight and when the page becomes visible after being backgrounded; clear timers/listeners on unmount.
+- [x] Keep urgency text/icons alongside color and expose an understandable accessible label.
+- [x] Update urgency immediately after due-date or status changes.
 
 #### 10.3 Clarify summary scope
 
-- [ ] Keep Total, Completed, and Overdue as whole-board counts and visibly label that scope.
-- [ ] Show filtered results separately, such as `Showing 4 of 18 tasks`.
-- [ ] Derive counts from unique tasks, not joined query rows; multiple labels or assignees must not inflate totals.
-- [ ] Update counts after task creation/deletion, status changes, due-date edits, and local-date changes.
-- [ ] Do not treat failed task loading as a successfully empty board with authoritative zero counts.
+- [x] Keep Total, Completed, and Overdue as whole-board counts and visibly label that scope.
+- [x] Show filtered results separately, such as `Showing 4 of 18 tasks`.
+- [x] Derive counts from unique tasks, not joined query rows; multiple labels or assignees must not inflate totals.
+- [x] Update counts after task creation/deletion, status changes, due-date edits, and local-date changes.
+- [x] Do not treat failed task loading as a successfully empty board with authoritative zero counts.
 
 **Done when:** Combined filters return predictable results, urgency remains correct as time changes, and summary counts are accurate and clearly scoped.
 

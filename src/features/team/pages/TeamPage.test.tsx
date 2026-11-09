@@ -26,7 +26,7 @@ function Harness() {
   return <>
     <BoardTeam members={workspace.members} isLoading={workspace.membersLoading} error={workspace.memberError} onRetry={workspace.reloadMembers} onManage={vi.fn()} />
     <TeamPage workspace={workspace} tasks={tasks.tasks} tasksLoading={tasks.isLoading} taskError={tasks.loadError} registerGuard={registerGuard} />
-    {tasks.tasks.map((task) => <TaskCard key={task.id} task={task} isMoving={false} onEdit={vi.fn()} />)}
+    {tasks.tasks.map((task) => <TaskCard key={task.id} task={task} today={new Date()} isMoving={false} onEdit={vi.fn()} />)}
   </>
 }
 

@@ -28,6 +28,16 @@
   gap: 8px;
 }
 
+.board-summary {
+  flex-shrink: 0;
+}
+
+.summary-scope {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .summary-card {
   gap: 8px;
   min-height: 47px;
@@ -68,9 +78,9 @@
 
 .board-panel-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
+  align-items: stretch;
+  flex-direction: column;
+  gap: 16px;
   min-height: 82px;
   padding: 18px 22px;
   border-bottom: 1px solid var(--line);

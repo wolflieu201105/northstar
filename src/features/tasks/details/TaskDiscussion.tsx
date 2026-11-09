@@ -28,7 +28,8 @@ export function TaskDiscussion({ details, disabled }: { details: Details; disabl
         <CommentList comments={details.comments} onRetry={() => void details.retryComments()} onLoadMore={() => void details.loadMoreComments()} />
         <CommentComposer draft={details.commentDraft} isPosting={details.isPosting} error={details.commentSaveError} disabled={disabled}
           onChange={details.setCommentDraft} onPost={details.postComment} />
-      </> : <ActivityTimeline activity={details.activity} onRetry={() => void details.reloadActivity()} onLoadMore={() => void details.loadMoreActivity()} />}
+      </> : <ActivityTimeline activity={details.activity} onRetry={() => void details.retryActivity()}
+        onRefresh={() => void details.reloadActivity()} onLoadMore={() => void details.loadMoreActivity()} />}
     </div>
   </section>
 }

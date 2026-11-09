@@ -16,7 +16,7 @@ The interface uses a restrained black-and-green visual system and supports deskt
 - Private task storage protected by Supabase Row Level Security
 - Four workflow columns: To Do, In Progress, In Review, and Done
 - Create, edit, and delete task flows
-- Board, Team, and Labels navigation with shareable task URLs and preserved search/priority filters
+- Board, Team, and Labels navigation with shareable task URLs and preserved filters
 - Responsive task-detail panel with save-in-place editing and unsaved-draft protection
 - Select existing assignees/labels, post timestamped comments, and inspect persisted activity
 - Create, edit, archive, and restore team profiles with optional avatar colors
@@ -24,18 +24,21 @@ The interface uses a restrained black-and-green visual system and supports deskt
 - Create, rename, recolor, archive, and restore custom labels with duplicate-name recovery
 - Attach multiple labels during task creation/editing and expand label chips on cards
 - Chronological comment pagination, explicit save/page retry, and protected comment drafts
+- Read-only activity history with before/after details, updating relative times, and paginated recovery
 - Drag-and-drop status changes with optimistic updates and rollback on failure
 - Keyboard/mobile status selector as an alternative to dragging
 - Descriptions, priority levels, and calendar due dates
-- Overdue, due-today, and upcoming indicators using local calendar dates
-- Case-insensitive search and priority filtering
-- Total, completed, and overdue board summaries
+- Overdue, due-today, and upcoming indicators that refresh at local midnight and on page resume
+- Neutral saved due dates for completed tasks
+- Combined search, priority, multiple-assignee, and multiple-label filters with removable chips
+- Unassigned/Unlabeled modes and archived options still linked to tasks
+- Whole-board total, completed, and overdue summaries alongside filtered result counts
 - Loading, empty, configuration, error, retry, and save states
 - Responsive horizontal board navigation on narrow screens
 - Accessible labels, focus states, dialog behavior, and reduced-motion support
 - Lazy-loaded board and task form bundles
 
-The enhancement roadmap is in [path-updates.md](path-updates.md). Phase 8 is ready for review; activity timeline improvements follow in Phase 9. See [the comments checkpoint review](docs/task-comments.md#checkpoint-review) for manual checks. This checkpoint requires no additional SQL. Assignee/label board filters follow in Phase 10.
+The enhancement roadmap is in [path-updates.md](path-updates.md). Phase 10 is ready for review: see [the board checkpoint guide](docs/board-filters.md#checkpoint-review) for filters, dates, and summaries. The [activity guide](docs/task-activity.md#checkpoint-review) retains the remaining Phase 9 browser checks. Phase 11 security and end-to-end verification follow after review. This checkpoint requires no additional SQL.
 
 ## Technology
 

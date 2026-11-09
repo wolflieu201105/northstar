@@ -2,6 +2,18 @@ import { observable } from '../../shared/state/observable'
 import { TASK_PRIORITIES, type TaskPriority } from '../../features/tasks/types'
 
 import type { WorkspaceView, NavigationGuard } from '../../shared/types/navigation'
+import type { RelationFilter } from '../../shared/types/filters'
+
+function readRelationFilter(url: URL, key: string, emptyValue: string): RelationFilter {
+  const values = url.searchParams.getAll(key)
+  const ids = [...new Set(values.map((value) => value.trim()).filter(Boolean))]
+  const normalized = ids.includes(emptyValue) ? [emptyValue] : ids
+  if (values.join('\0') !== normalized.join('\0')) {
+    url.searchParams.delete(key)
+    normalized.forEach((value) => url.searchParams.append(key, value))
+  }
+  return normalized.includes(emptyValue) ? 'none' : normalized.length ? normalized : 'all'
+}
 
 export function parseWorkspaceLocation(href: string) {
   const url = new URL(href, window.location.origin)
@@ -14,9 +26,11 @@ export function parseWorkspaceLocation(href: string) {
   const priority: TaskPriority | 'all' = TASK_PRIORITIES.includes(requestedPriority as TaskPriority)
     ? requestedPriority as TaskPriority : 'all'
   if (priority === 'all') url.searchParams.delete('priority')
+  const assignee = readRelationFilter(url, 'assignee', 'unassigned')
+  const label = readRelationFilter(url, 'label', 'unlabeled')
   return {
     href: `${url.pathname}${url.search}${url.hash}`,
-    view, taskId: url.searchParams.get('task'), query: url.searchParams.get('q') ?? '', priority,
+    view, taskId: url.searchParams.get('task'), query: url.searchParams.get('q') ?? '', priority, assignee, label,
   }
 }
 
@@ -47,11 +61,14 @@ export function createNavigationStore() {
     writeIndex(next.href)
     state.update(next)
   }
-  function change(patch: Record<string, string | null>, replace = false, force = false) {
+  function change(patch: Record<string, string | string[] | null>, replace = false, force = false) {
     if (recovering && !force) return false
     const url = new URL(state.getSnapshot().href, window.location.origin)
     for (const [key, value] of Object.entries(patch)) {
-      if (value === null || value === '') url.searchParams.delete(key)
+      if (Array.isArray(value)) {
+        url.searchParams.delete(key)
+        value.forEach((item) => url.searchParams.append(key, item))
+      } else if (value === null || value === '') url.searchParams.delete(key)
       else url.searchParams.set(key, value)
     }
     const next = parseWorkspaceLocation(url.href)
@@ -73,6 +90,8 @@ export function createNavigationStore() {
     taskDeleted() { return change({ task: null }, true, true) },
     setQuery(query: string) { return change({ q: query }, true) },
     setPriority(priority: TaskPriority | 'all') { return change({ priority: priority === 'all' ? null : priority }, true) },
+    setAssignee(value: RelationFilter) { return change({ assignee: value === 'all' ? null : value === 'none' ? 'unassigned' : value }, true) },
+    setLabel(value: RelationFilter) { return change({ label: value === 'all' ? null : value === 'none' ? 'unlabeled' : value }, true) },
     clearFilters() { return change({ q: null, priority: null, assignee: null, label: null }, true) },
   }
 }

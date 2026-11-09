@@ -36,7 +36,7 @@ Lazy loading remains on the board, task form, task-detail panel, Team page, and 
 
 ## Styles
 
-`src/main.tsx` loads `src/styles/app.css` once. The former 1,368-line stylesheet is now a 33-line ordered import entry point for 30 smaller stylesheets. The largest stylesheet is 221 lines; dense single-line rules have been expanded for editing.
+`src/main.tsx` loads `src/styles/app.css` once. The maintenance checkpoint split the former 1,368-line stylesheet into an ordered import entry point and 30 smaller stylesheets, expanding dense single-line rules for editing. Later features add files in the relevant style folder; Phase 9 adds the separate activity stylesheet and Phase 10 adds board filter styles.
 
 | Folder | Edit here for |
 | --- | --- |
@@ -45,6 +45,7 @@ Lazy loading remains on the board, task form, task-detail panel, Team page, and 
 | `styles/shared/` | Buttons/controls, forms/dialogs, and relationship pickers. |
 | `styles/board/` | Board overview, toolbar, columns, empty/loading states, and team strip. |
 | `styles/tasks/` | Task cards, detail panel, discussion, and assignee presentation. |
+| `styles/activity/` | Activity summaries, old/new details, metadata, and pagination. |
 | `styles/team/`, `styles/labels/` | Avatars and label chips. |
 | `styles/workspace/` | Workspace navigation, directories, and member/label editors. |
 | `styles/responsive/` | Existing device-specific overrides and reduced-motion rules. |
@@ -59,6 +60,6 @@ Edit files under `src/`. `npm run build` regenerates `dist/` with optimized, has
 
 Run the normal test/lint/build commands. On this Windows workspace, `npm test -- --maxWorkers=2` avoids the previously observed worker startup/file-access issue. The app-composition regression checks that management navigation preserves board filters/scroll and a detail save updates the same canonical card.
 
-For browser review, run `npm run dev`, visit Board/Team/Labels, open and save a task, post a comment, and check narrow-screen dialogs. Native focus behavior, touch dragging, and appearance remain browser checks. The feature roadmap resumes at Phase 9 after this maintenance checkpoint.
+For browser review, run `npm run dev`, visit Board/Team/Labels, open and save a task, post a comment, and check narrow-screen dialogs. Native focus behavior, touch dragging, and appearance remain browser checks. The [activity guide](task-activity.md) documents formatting/clock modules; the [Phase 10 board guide](board-filters.md) covers combined filters, the shared local-date clock, and summary behavior.
 
-Validation: 84 tests pass across 21 files, including the new app-composition regression. ESLint and the TypeScript/production build pass. The CSS syntax-tree comparison passes for all 324 original top-level rules/at-rules, and the production CSS retains its prior asset hash. This refactor makes no hosted data or schema changes.
+Maintenance-checkpoint validation: 84 tests passed across 21 files, including the new app-composition regression. ESLint and the TypeScript/production build passed. The CSS syntax-tree comparison passed for all 324 original top-level rules/at-rules, and the production CSS retained its prior asset hash. That refactor made no hosted data or schema changes; later features extend these styles separately.

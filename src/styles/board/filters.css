@@ -1,0 +1,134 @@
+.board-filter-controls {
+  width: 100%;
+  min-width: 0;
+}
+
+.board-relation-filter {
+  flex: 1 1 170px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface-soft);
+  font-size: 12px;
+}
+
+.board-relation-filter summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 10px;
+  list-style: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.board-relation-filter summary::-webkit-details-marker {
+  display: none;
+}
+
+.board-relation-filter summary span {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.board-relation-filter[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.board-filter-options {
+  min-width: 0;
+  margin: 0;
+  padding: 10px;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.board-filter-options p {
+  margin: 8px 0 0;
+  color: var(--muted-strong);
+  font-size: 11px;
+}
+
+.filter-modes,
+.active-board-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-modes button,
+.board-filter-chip {
+  min-height: 32px;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  background: var(--surface);
+  font-size: 11px;
+}
+
+.filter-modes button[aria-pressed="true"],
+.board-filter-chip {
+  border-color: #99c7ad;
+  color: var(--accent-dark);
+  background: var(--accent-soft);
+}
+
+.filter-option-search input {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  margin-top: 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.filter-option-list {
+  max-height: 190px;
+  overflow-y: auto;
+  margin-top: 6px;
+}
+
+.filter-option-list label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.filter-option-list input {
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}
+
+.active-board-filters {
+  margin-top: 12px;
+}
+
+.board-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.board-filter-chip svg {
+  flex-shrink: 0;
+}
+
+.board-no-matches {
+  margin: 0;
+  padding: 16px 22px;
+  color: var(--muted-strong);
+  background: var(--accent-soft);
+  font-size: 13px;
+}

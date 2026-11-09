@@ -7,6 +7,7 @@ interface BoardColumnProps {
   status: TaskStatus
   tasks: TaskView[]
   totalCount: number
+  today: Date
   hasFilters: boolean
   movingTaskIds: Set<string>
   onCreate: (status: TaskStatus) => void
@@ -17,6 +18,7 @@ export function BoardColumn({
   status,
   tasks,
   totalCount,
+  today,
   hasFilters,
   movingTaskIds,
   onCreate,
@@ -40,8 +42,8 @@ export function BoardColumn({
         <div className="column-title-row">
           <span className="column-status-mark" aria-hidden="true" />
           <h2 id={`column-${status}-title`}>{meta.label}</h2>
-          <span className="column-count" aria-label={`${tasks.length} visible tasks`}>
-            {hasFilters && tasks.length !== totalCount ? `${tasks.length}/${totalCount}` : totalCount}
+          <span className="column-count" aria-label={`${tasks.length} of ${totalCount} tasks visible`}>
+            {hasFilters ? `${tasks.length} of ${totalCount}` : totalCount}
           </span>
         </div>
         <p>{meta.description}</p>
@@ -52,6 +54,7 @@ export function BoardColumn({
           <TaskCard
             key={task.id}
             task={task}
+            today={today}
             isMoving={movingTaskIds.has(task.id)}
             onEdit={onEdit}
           />

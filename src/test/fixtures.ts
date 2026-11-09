@@ -2,6 +2,15 @@ import type { TaskView } from '../features/tasks/types'
 import type { TeamMember } from '../features/team/types'
 import type { Label } from '../features/labels/types'
 import type { TaskComment } from '../features/comments/types'
+import type { TaskActivity } from '../features/activity/types'
+
+export function makeActivity(overrides: Partial<Pick<TaskActivity, 'id' | 'task_id' | 'user_id' | 'actor_user_id' | 'created_at'>> = {}): TaskActivity {
+  return {
+    id: '00000000-0000-4000-8000-000000000001', user_id: 'user-1', task_id: 'task-1', actor_user_id: 'user-1',
+    created_at: '2026-11-09T05:00:00.000001Z', event_type: 'task_created',
+    payload: { version: 1, title: 'Prepare launch brief', status: 'todo' }, ...overrides,
+  }
+}
 
 export function makeComment(overrides: Partial<TaskComment> = {}): TaskComment {
   return {

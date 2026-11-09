@@ -36,4 +36,4 @@ Read-only hosted checks confirmed RLS, the body constraint, the owner/task forei
 
 Local validation passes: `npm test -- --maxWorkers=2` (83 tests across 19 files), ESLint, and the TypeScript/production build. Comment components remain inside the lazy-loaded task-detail bundle.
 
-Activity formatting, relative timestamps, and further timeline recovery are the next checkpoint in [path-updates.md](../path-updates.md).
+Activity formatting, relative timestamps, and timeline recovery are documented in the [Phase 9 guide](task-activity.md). Remaining work is tracked in [path-updates.md](../path-updates.md).

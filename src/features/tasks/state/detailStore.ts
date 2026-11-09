@@ -1,7 +1,7 @@
 import type { AppClient } from '../../../shared/lib/supabase'
 import type { TaskActivity } from '../../activity/types'
 import type { TaskComment } from '../../comments/types'
-import type { TimelineListState as ListState } from '../../../shared/types/timeline'
+import type { PaginatedTimelineState as ListState } from '../../../shared/types/timeline'
 import { fetchActivity } from '../../activity/services/activity'
 import { createComment, fetchComments } from '../../comments/services/comments'
 import { serviceError } from '../../../shared/services/errors'
@@ -10,13 +10,13 @@ import { normalizeCommentBody } from '../../comments/utils'
 import { compareTimelineRows } from '../../../shared/lib/timelineOrder'
 
 interface DetailState {
-  comments: ListState<TaskComment> & { isLoadingMore: boolean; failedLoadMore: boolean }
+  comments: ListState<TaskComment>
   activity: ListState<TaskActivity>
   commentDraft: string
   isPosting: boolean
   commentSaveError: string | null
 }
-const emptyList = <Row>(isLoading = false): ListState<Row> => ({ items: [], nextCursor: null, isLoading, error: null })
+const emptyList = <Row>(isLoading = false): ListState<Row> => ({ items: [], nextCursor: null, isLoading, isLoadingMore: false, failedLoadMore: false, error: null })
 function mergeRows<Row extends { id: string; created_at: string }>(old: Row[], incoming: Row[]) {
   return [...new Map([...old, ...incoming].map((row) => [row.id, row])).values()]
     .sort(compareTimelineRows)
@@ -24,7 +24,7 @@ function mergeRows<Row extends { id: string; created_at: string }>(old: Row[], i
 
 export function createDetailStore(client: AppClient | null, userId: string | undefined, taskId: string | null) {
   const initiallyLoading = Boolean(client && userId && taskId)
-  const state = observable<DetailState>({ comments: { ...emptyList<TaskComment>(initiallyLoading), isLoadingMore: false, failedLoadMore: false }, activity: emptyList(initiallyLoading), commentDraft: '', isPosting: false, commentSaveError: null })
+  const state = observable<DetailState>({ comments: emptyList(initiallyLoading), activity: emptyList(initiallyLoading), commentDraft: '', isPosting: false, commentSaveError: null })
   const requests = { comments: 0, activity: 0 }
   const commentIntents = new Map<string, string>()
   const confirmedComments = new Map<string, TaskComment>()
@@ -56,15 +56,15 @@ export function createDetailStore(client: AppClient | null, userId: string | und
     const previous = state.getSnapshot().activity
     if (more && (previous.isLoading || !previous.nextCursor)) return
     const request = ++requests.activity
-    state.update({ activity: { ...previous, isLoading: true, error: null } })
+    state.update({ activity: { ...previous, isLoading: true, isLoadingMore: more, failedLoadMore: false, error: null } })
     try {
       const page = await fetchActivity(client, userId, taskId, more ? previous.nextCursor! : undefined)
       if (active && request === requests.activity) state.update((current) => ({ ...current,
-        activity: { items: mergeRows(more ? current.activity.items : [], page.items), nextCursor: page.nextCursor, isLoading: false, error: null },
+        activity: { items: mergeRows(more ? current.activity.items : [], page.items), nextCursor: page.nextCursor, isLoading: false, isLoadingMore: false, failedLoadMore: false, error: null },
       }))
     } catch (error) {
       if (active && request === requests.activity) state.update((current) => ({ ...current,
-        activity: { ...current.activity, isLoading: false, error: serviceError(error).message },
+        activity: { ...current.activity, isLoading: false, isLoadingMore: false, failedLoadMore: more, error: serviceError(error).message },
       }))
     }
   }
@@ -96,6 +96,7 @@ export function createDetailStore(client: AppClient | null, userId: string | und
   return {
     ...state, loadComments, loadActivity, postComment,
     retryComments() { return loadComments(state.getSnapshot().comments.failedLoadMore) },
+    retryActivity() { return loadActivity(state.getSnapshot().activity.failedLoadMore) },
     setCommentDraft(commentDraft: string) { state.update({ commentDraft, commentSaveError: null }) },
     start() { active = true; void loadComments(); void loadActivity() },
     stop() { active = false; ++requests.comments; ++requests.activity },

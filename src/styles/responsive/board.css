@@ -3,8 +3,11 @@
     align-items: flex-start;
     flex-direction: column;
   }
+  .board-summary,
   .summary-cards {
     width: 100%;
+  }
+  .summary-cards {
     grid-template-columns: repeat(3, 1fr);
   }
   .summary-card {

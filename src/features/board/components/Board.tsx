@@ -6,6 +6,7 @@ import { BoardColumn } from './BoardColumn'
 interface BoardProps {
   tasks: TaskView[]
   allTasks: TaskView[]
+  today: Date
   hasFilters: boolean
   movingTaskIds: Set<string>
   onCreate: (status: TaskStatus) => void
@@ -16,6 +17,7 @@ interface BoardProps {
 export function Board({
   tasks,
   allTasks,
+  today,
   hasFilters,
   movingTaskIds,
   onCreate,
@@ -41,6 +43,7 @@ export function Board({
               status={status}
               tasks={tasks.filter((task) => task.status === status)}
               totalCount={allTasks.filter((task) => task.status === status).length}
+              today={today}
               hasFilters={hasFilters}
               movingTaskIds={movingTaskIds}
               onCreate={onCreate}
