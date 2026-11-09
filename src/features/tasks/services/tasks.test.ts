@@ -14,6 +14,24 @@ function clientWith(fetch: typeof globalThis.fetch) {
 }
 
 describe('task service wire contracts', () => {
+  it('returns a structured HTTP 409 conflict without retrying the write', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(new Response(JSON.stringify({ code: 'PT409', message: 'Task changed' }), {
+      status: 409, headers: { 'Content-Type': 'application/json' },
+    }))
+    await expect(updateTask(clientWith(fetch), 'group-1', 'task-1', { title: 'Draft' }, makeTask().updated_at))
+      .rejects.toMatchObject({ code: '40001', uncertain: false })
+    expect(fetch).toHaveBeenCalledOnce()
+  })
+  it('normalizes duplicate joined profiles and labels without mutating the response', async () => {
+    const member = makeMember()
+    const label = makeLabel({ archived_at: '2026-11-09T00:00:00Z' })
+    const task = makeTask()
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(response([{ ...task,
+      task_assignments: [{ member: { profile: member } }, { member: { profile: member } }],
+      task_labels: [{ label }, { label }],
+    }]))
+    expect((await fetchTasks(clientWith(fetch), 'group-1'))[0]).toMatchObject({ assignees: [member], labels: [label] })
+  })
   it('resolves assignees through actual membership profiles, including tasks created by another user', async () => {
     const member = makeMember()
     const label = makeLabel()

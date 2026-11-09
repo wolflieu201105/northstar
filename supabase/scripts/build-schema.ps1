@@ -19,17 +19,21 @@ $modules = foreach ($moduleName in $moduleNames) {
 $realtimePath = Join-Path $supabaseRoot 'migrations\20261109141005_add_private_workspace_realtime.sql'
 $realtimeBody = [IO.File]::ReadAllText((Join-Path $supabaseRoot 'sql\groups\realtime.sql')).Replace([string][char]13,'').Trim()
 $realtimeReset = [IO.File]::ReadAllText((Join-Path $supabaseRoot 'sql\groups\realtime-reset.sql')).Replace([string][char]13,'').Trim()
+$conflictPath = Join-Path $supabaseRoot 'migrations\20261109151951_return_revision_conflicts_as_http_409.sql'
+$conflictBody = [IO.File]::ReadAllText((Join-Path $supabaseRoot 'sql\groups\conflicts.sql')).Replace([string][char]13,'').Trim()
 $newline = [string][char]10
 $securityBody = '-- Phase 13: secure shared-group operations.' + $newline + ($modules -join ($newline+$newline))
 $encoding = [Text.UTF8Encoding]::new($false)
 # Applied Phase 12/13 migrations remain byte-for-byte unchanged.
 $existingSecurity = [IO.File]::ReadAllText($securityPath).Replace([string][char]13,'')
 if (-not $existingSecurity.Contains($securityBody)) { throw 'Phase 13 source changed. Add a new migration instead of rewriting applied history.' }
-[IO.File]::WriteAllText($realtimePath, ('-- GENERATED Phase 17: private workspace live updates.'+$newline+'begin;'+$newline+$newline+$realtimeBody+$newline+$newline+"notify pgrst, 'reload schema';"+$newline+'commit;'+$newline),$encoding)
-[IO.File]::WriteAllText((Join-Path $supabaseRoot 'schema.sql'), ('-- GENERATED clean installation: foundation plus Phases 13 and 17. Do not use over an existing schema.'+$newline+'begin;'+$newline+$newline+$foundationBody+$newline+$newline+$securityBody+$newline+$newline+$realtimeBody+$newline+$newline+"notify pgrst, 'reload schema';"+$newline+'commit;'+$newline),$encoding)
+$existingRealtime = [IO.File]::ReadAllText($realtimePath).Replace([string][char]13,'')
+if (-not $existingRealtime.Contains($realtimeBody)) { throw 'Phase 17 source changed. Add a new migration instead of rewriting applied history.' }
+[IO.File]::WriteAllText($conflictPath, ('-- GENERATED Phase 18: revision conflicts return HTTP 409.'+$newline+'begin;'+$newline+$newline+$conflictBody+$newline+$newline+"notify pgrst, 'reload schema';"+$newline+'commit;'+$newline),$encoding)
+[IO.File]::WriteAllText((Join-Path $supabaseRoot 'schema.sql'), ('-- GENERATED clean installation: foundation plus Phases 13, 17, and 18. Do not use over an existing schema.'+$newline+'begin;'+$newline+$newline+$foundationBody+$newline+$newline+$securityBody+$newline+$newline+$realtimeBody+$newline+$newline+$conflictBody+$newline+$newline+"notify pgrst, 'reload schema';"+$newline+'commit;'+$newline),$encoding)
 $resetBody = $foundationText.Trim()
 if (-not $resetBody.StartsWith('begin;')) { throw 'Reset migration must begin a transaction.' }
 $resetBody = $resetBody.Substring(6).Trim()
 $resetBody = $resetBody.Substring(0,$resetBody.Length-7).Trim()
-[IO.File]::WriteAllText((Join-Path $supabaseRoot 'reset.sql'), ('-- GENERATED DESTRUCTIVE reset + complete Phase 17 backend. Discards application data; retains Auth.'+$newline+'begin;'+$newline+$newline+$realtimeReset+$newline+$newline+$resetBody+$newline+$newline+$securityBody+$newline+$newline+$realtimeBody+$newline+$newline+"notify pgrst, 'reload schema';"+$newline+'commit;'+$newline),$encoding)
-Write-Output 'Built clean schema, complete reset, and Phase 17 migration; applied migrations unchanged. No SQL executed.'
+[IO.File]::WriteAllText((Join-Path $supabaseRoot 'reset.sql'), ('-- GENERATED DESTRUCTIVE reset + complete Phase 18 backend. Discards application data; retains Auth.'+$newline+'begin;'+$newline+$newline+$realtimeReset+$newline+$newline+$resetBody+$newline+$newline+$securityBody+$newline+$newline+$realtimeBody+$newline+$newline+$conflictBody+$newline+$newline+"notify pgrst, 'reload schema';"+$newline+'commit;'+$newline),$encoding)
+Write-Output 'Built clean schema, complete reset, and Phase 18 migration; applied migrations unchanged. No SQL executed.'

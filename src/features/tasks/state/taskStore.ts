@@ -56,14 +56,15 @@ export function createTaskStore(client: AppClient | null, groupId: string | unde
         ...current.filter((row) => pending.has(row.id) && !rows.some((item) => item.id === row.id)),
       ], isLoading: false })
     } catch (error) {
-      if (serviceError(error).code === '42501') onAccessError?.()
+      if (active && request === loadRequest && serviceError(error).code === '42501') onAccessError?.()
       if (active && request === loadRequest) state.update({ loadError: serviceError(error).message, isLoading: false })
     }
   }
   async function reconcile(id: string) {
-    const connection = context()
+    if (!active || !client || !groupId) return
     try {
-      const row = await fetchTask(connection.client, connection.groupId, id)
+      const row = await fetchTask(client, groupId, id)
+      if (!active) return
       if (row) upsert(row)
       else state.update((previous) => ({ ...previous, tasks: previous.tasks.filter((task) => task.id !== id) }))
     } catch { /* Keep the last known state and let the visible error offer recovery. */ }
@@ -80,7 +81,7 @@ export function createTaskStore(client: AppClient | null, groupId: string | unde
       createIds.delete(key)
       return task
     } catch (error) {
-      if (serviceError(error).code === '42501') onAccessError?.()
+      if (active && serviceError(error).code === '42501') onAccessError?.()
       throw error
     } finally { release(id) }
   }
@@ -95,7 +96,7 @@ export function createTaskStore(client: AppClient | null, groupId: string | unde
       return task
     } catch (reason) {
       const error = serviceError(reason)
-      if (error.code === '42501') onAccessError?.()
+      if (active && error.code === '42501') onAccessError?.()
       if (error.code === '40001' || error.uncertain) await reconcile(id)
       throw error
     } finally { release(id) }
@@ -110,7 +111,7 @@ export function createTaskStore(client: AppClient | null, groupId: string | unde
       state.update((previous) => ({ ...previous, tasks: previous.tasks.filter((task) => task.id !== id) }))
     } catch (reason) {
       const error = serviceError(reason)
-      if (error.code === '42501') onAccessError?.()
+      if (active && error.code === '42501') onAccessError?.()
       if (error.code === '40001' || error.uncertain) await reconcile(id)
       throw error
     } finally { release(id) }
@@ -128,9 +129,9 @@ export function createTaskStore(client: AppClient | null, groupId: string | unde
     } catch (reason) {
       upsert(current)
       const error = serviceError(reason)
-      if (error.code === '42501') onAccessError?.()
+      if (active && error.code === '42501') onAccessError?.()
       if (error.code === '40001' || error.uncertain) await reconcile(id)
-      state.update({ notice: { message: error.message, retry: () => { void moveTask(id, status) } } })
+      if (active) state.update({ notice: { message: error.message, retry: () => { void moveTask(id, status) } } })
     } finally { release(id) }
   }
   return {

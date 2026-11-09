@@ -6,6 +6,15 @@ import tseslint from 'typescript-eslint'
 export default tseslint.config(
   { ignores: ['dist', 'coverage'] },
   {
+    extends: [js.configs.recommended],
+    files: ['supabase/tests/api/**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      globals: { process: 'readonly', console: 'readonly', URL: 'readonly', fetch: 'readonly',
+        AbortSignal: 'readonly', setTimeout: 'readonly', clearTimeout: 'readonly' },
+    },
+  },
+  {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
     languageOptions: {

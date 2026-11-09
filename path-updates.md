@@ -6,7 +6,7 @@ Keep [path.md](path.md) as the original build plan and [README.md](README.md) as
 
 **November 9 fresh-start correction:** The user approved discarding existing application data. Phase 12 therefore supplies a clean group schema and a destructive reset, without importing old tasks or placeholder members. Guest registration must still preserve work created afterward. No hosted reset has been performed.
 
-**November 9 scope update:** The user confirmed email/password accounts, unique usernames for inviting registered users or guests, and shared editing/invitations for all active group members. See the [accepted collaboration design](docs/shared-groups-design.md). Phases 11–16 now provide the design, user-verified group backend, and account/group/frontend implementation. Phase 17 private live updates/recovery is implemented locally; its additive SQL and actual two-browser review are the current checkpoint. Native email and multi-user acceptance remain part of the final review. The previous final verification/release phases move from 11/12 to 18/19. [update_path.md](update_path.md) links here as the current update-path entry point.
+**November 9 scope update:** Email/password accounts, unique invitation usernames, and shared editing/invitations for accepted members are implemented through Phases 11-16; see the [accepted collaboration design](docs/shared-groups-design.md). The user confirmed Phase 17 live updates working. Phase 18 real-client verification is in progress and found a stale-revision HTTP issue; the [additive SQL fix and results](docs/phase18-verification.md) are the current checkpoint. Registered-user, email, and full browser acceptance remain open. Release remains Phase 19. [update_path.md](update_path.md) links to the current next action.
 
 ## 1. High-level roadmap
 
@@ -613,7 +613,7 @@ Deliverable: [Group-scoped workspace contract and review](docs/accounts-and-grou
 
 ### Phase 17 — Synchronize shared work
 
-Owner: Codex | Status: Implemented locally — SQL and live-browser review pending | Next action: Apply the additive Phase 17 migration, run its read-only verifier, and review two live browsers before Phase 18.
+Owner: Codex | Status: Installed; user confirmed live updates working | Next action: Phase 18 has verified native WebSocket delivery/access; retain extended browser acceptance there.
 
 Deliverables: [Realtime SQL/setup and review](docs/realtime.md), [additive migration](supabase/migrations/20261109141005_add_private_workspace_realtime.sql), and [read-only verifier](supabase/verify-phase17.sql). Private content-free Broadcast signals drive scoped/coalesced background reads, draft-safe history merging, independent access-loss hints, reconnect/focus/30-second recovery, and narrow-screen connection feedback. On November 9, 2026, 179 tests across 34 files, lint, and the production build passed. PostgreSQL 17 passed 32 Realtime checks on each fresh/upgrade path plus the existing 76 checks per path, 39 foundation checks, three concurrency races, reapplication, and catalog/reset parity. Local advisors reported no warnings/errors. No hosted migration/data/Auth/Realtime settings were changed; actual WebSocket delivery, two-browser timing, and visual/touch behavior remain manual.
 
@@ -632,20 +632,22 @@ Deliverables: [Realtime SQL/setup and review](docs/realtime.md), [additive migra
 
 ### Phase 18 — Verify security and the complete experience
 
-Owner: ___ | Status: Not started | Next action: Review accumulated tests and exercise real guest/registered clients in shared and isolated groups.
+Owner: Codex | Status: In progress — additive SQL fix ready for review | Next action: Apply the Phase 18 HTTP-conflict migration and read-only verifier, then finish real conflict/registered-user/browser acceptance.
+
+Deliverable: [Phase 18 verification results and SQL checkpoint](docs/phase18-verification.md). 187 frontend tests across 35 files, lint, build, local fresh/reset parity, and three concurrent races pass. 179 actual guest/API/Realtime assertions passed with one explicit stale-conflict HTTP check skipped. Real stale saves exposed PostgREST's `40001` retry behavior; a new additive migration maps public revision errors to `PT409`. It is tested locally and not applied to the hosted project. Authorized temporary fixtures were removed. Production dependencies have no audit findings; the full audit's development-only minimatch advisory and hosted Auth/password findings are recorded for review. Phase 18 remains open for hosted fix verification, registered-user tokens, email/browser/mobile flows, and clean hosted installation.
 
 #### 18.1 Test application behavior
 
-- [ ] Extend unit tests for combined filter semantics, Unassigned/Unlabeled, archived records, and duplicate joined rows.
-- [ ] Test calendar urgency, midnight refresh, completed-task dates, and whole-board statistics.
+- [x] Extend unit tests for combined filter semantics, Unassigned/Unlabeled, archived records, and duplicate joined rows.
+- [x] Test calendar urgency, midnight refresh, completed-task dates, and whole-board statistics.
 - [ ] Test member/label validation, multi-pickers, keyboard interaction, and accessible avatar labels.
-- [ ] Test detail navigation, tab loading, task switching, stale responses, and unsaved-draft handling.
-- [ ] Test comments for blank rejection, order, timestamps, draft retention, and duplicate-request recovery.
-- [ ] Test activity formatting, old/new values, historic names, unknown events, and no-op behavior.
-- [ ] Test atomic save failures, stale edit conflicts, move rollback, and overlapping task mutations.
-- [ ] Retain regression coverage for guest auth, task CRUD, four columns, empty drop targets, and refresh persistence.
+- [x] Test detail navigation, tab loading, task switching, stale responses, and unsaved-draft handling.
+- [x] Test comments for blank rejection, order, timestamps, draft retention, and duplicate-request recovery.
+- [x] Test activity formatting, old/new values, historic names, unknown events, and no-op behavior.
+- [x] Test atomic save failures, stale edit conflicts, move rollback, and overlapping task mutations. Local checks pass; native HTTP conflict verification awaits the new migration.
+- [x] Retain regression coverage for guest auth, task CRUD, four columns, empty drop targets, and refresh persistence.
 - [ ] Test desktop and narrow mobile flows, including multiple assignments, tags, comments, and filters.
-- [ ] Run lint, tests, type checks/production build, and a dependency audit appropriate to changed packages.
+- [x] Run lint, tests, type checks/production build, and a dependency audit appropriate to changed packages. Record the development-tooling advisory exception separately from the zero-finding production audit.
 - [ ] Test guest-to-account conversion, unchanged UUID/data/memberships, verification resume/expiry, duplicate username/email, password recovery, sign-in/out, and intentional identity switching.
 - [ ] Test group creation/switching, accepted membership, invitation state transitions, real-member pickers, account/group cache isolation, and removal with a dirty open task.
 - [ ] Test simultaneous membership/invitation changes, live task conflicts, reconnect/refetch, and subscription cleanup without duplicate activity/comments.
@@ -669,12 +671,12 @@ Use actual guest and registered-user access tokens against the Data API/RPC in a
 
 #### 18.3 Verify clean setup, reset, and recovery
 
-- [ ] Reset a populated copy of the old schema and verify old application data is discarded while Auth accounts remain.
+- [x] Reset a populated local copy of the old schema and verify old application data is discarded while Auth accounts remain.
 - [ ] Apply the full schema to an empty test project and run the same guest-client checks.
-- [ ] Confirm generated types and application queries match both installation paths.
+- [x] Confirm generated types and application queries match both installation paths. Hosted generated types match exactly; local fresh/reset catalogs and API signatures match.
 - [ ] Exercise task/group deletion cascades and verify no orphaned links, comments, or activity remain; verify non-owner account deletion and member departure retain shared content/history, and owner deletion requires the specified transfer/delete path.
 - [ ] Use a coordinated backend/frontend release: the old private frontend is intentionally incompatible with the clean group model.
-- [ ] Record tested commit, migration version, environment, and results without storing guest tokens.
+- [x] Record tested commit, migration version, environment, and results without storing guest tokens.
 - [ ] Create work as a guest in the new schema, register it, then log in on another browser and verify its exact UUID, groups, tasks, assignments, comments, and history survived.
 - [ ] Verify old placeholder profiles/links are absent, no Auth users were invented, and all new assignments reference accepted accounts.
 

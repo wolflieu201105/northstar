@@ -91,9 +91,9 @@ select test.expect_error($q$select public.save_task('aaaaaaaa-aaaa-4aaa-8aaa-aaa
 select test.assert_true((select title='Shared task' from public.tasks where id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1')
   and (select count(*) from public.task_activity)=(select events from before_noop), 'a failed save appends no success history or scalar edits');
 select test.expect_error($q$select public.save_task('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa0','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1','{"title":"Stale"}',null,null,'2020-01-01')$q$,
-  '40001','stale task tokens reject overwrites');
+  'PT409','stale task tokens reject overwrites');
 select test.expect_error($q$select public.save_task('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa0','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1','{}')$q$,
-  '40001','existing tasks require an exact token even for an otherwise empty save');
+  'PT409','existing tasks require an exact token even for an otherwise empty save');
 select test.expect_error($q$select public.save_task('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa0','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1','{}',array[null]::uuid[],null,test.token('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1'))$q$,
   '22023','null relationship IDs are rejected');
 select test.expect_error($q$select public.save_task('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa0','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1','{}',null,
@@ -117,7 +117,7 @@ select test.assert_true((select count(*)=1 from public.task_labels where task_id
 select test.expect_error($q$select public.save_label('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa0','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa8','BUG')$q$,
   '23505','label names are case-insensitively unique within a group');
 select test.expect_error($q$select public.delete_task('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa0','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1','2020-01-01')$q$,
-  '40001','stale task deletion is rejected');
+  'PT409','stale task deletion is rejected');
 select public.save_task('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa0','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa7','{"title":"Delete as member"}');
 select public.delete_task('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa0','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa7',test.token('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa7'));
 select test.assert_true(not exists(select 1 from public.task_activity where task_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa7'), 'any active member may delete tasks with their history cascaded');

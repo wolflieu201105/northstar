@@ -38,7 +38,7 @@ Arguments are named `p_*` in the SQL definitions. IDs are UUIDs and tokens are e
 
 Task changes accept only `title`, `description`, `status`, `priority`, and `due_date`. Invalid types, protected fields, malformed dates, foreign IDs, null relation IDs, and new archived-label attachments are rejected. Null relation arrays preserve links; empty arrays clear; duplicate IDs normalize. Existing archived label links may remain.
 
-Existing task/label updates require the exact saved timestamp. SQLSTATE `40001` means the record changed and the draft must be reconciled, not blindly retried. Task tokens advance monotonically with microsecond precision. No-op task saves preserve both token and history. For a lost create response, read the stable task/label ID first; an existing record cannot be overwritten as a tokenless create.
+Existing task/label updates require the exact saved timestamp. After the [Phase 18 additive fix](phase18-verification.md#sql-to-apply-now), public RPCs return `PT409`/HTTP 409 when the record changed; reconcile the retained draft before retrying. The private implementation retains its internal `40001` signal, and the frontend accepts both codes. Exposing raw `40001` through the Data API caused a documented PostgREST retry loop. Task tokens advance monotonically with microsecond precision. No-op task saves preserve both token and history. For a lost create response, read the stable task/label ID first; an existing record cannot be overwritten as a tokenless create.
 
 ## Invitations and limits
 
@@ -68,7 +68,7 @@ November 9, 2026 validation:
 
 - 76 access/mutation checks passed on each of the fresh and reset installation paths.
 - All 39 closed-foundation checks still passed before Phase 13 was added.
-- Three actual two-connection checks passed: stale task edit loses with `40001`; removal blocks a waiting edit with `42501`; revocation prevents waiting acceptance from admitting the recipient.
+- Three actual two-connection checks passed: stale task edit loses (now `PT409` after Phase 18); removal blocks a waiting edit with `42501`; revocation prevents waiting acceptance from admitting the recipient.
 - Fresh/reset catalogs match, including public/private tables, constraints, indexes, grants, functions, policies, and Auth triggers. Reapplying Phase 13 and resetting after shared operations leave the expected catalog.
 - Both read-only verification scripts executed successfully at their correct checkpoint.
 - The Supabase CLI's local custom-Postgres advisor scan returned **No issues found**. Temporary databases were removed and the dedicated cluster stopped.

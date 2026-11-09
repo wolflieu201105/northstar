@@ -1,6 +1,6 @@
 # Shared live updates — Phase 17
 
-Phase 17 adds private Supabase Broadcast invalidations, authoritative background refreshes, reconnect recovery, and periodic access checks. The frontend and SQL are implemented and tested locally. The hosted migration and actual two-browser WebSocket verification remain the review checkpoint.
+Phase 17 adds private Supabase Broadcast invalidations, authoritative background refreshes, reconnect recovery, and periodic access checks. The user applied the hosted migration and confirmed live updates working. Phase 18 also verified native authorized/denied WebSocket joins and committed delivery. Extended two-browser acceptance remains open; the current SQL checkpoint is the [Phase 18 conflict fix](phase18-verification.md).
 
 ## SQL to run for the existing project
 
@@ -34,7 +34,7 @@ If the strip stays paused, check the migration, private-channel setting, current
 | `northstar:account:<Auth UUID>` | The current account, with an existing profile. | Profile, joined-group directory, and authorized inbox changes. |
 | `northstar:group:<group UUID>` | Current accepted active membership in that group. | Board, labels, members, discussion, group directory, and authorized sent-invitation changes. |
 
-Database triggers send private empty payloads with an area name. They send no task text, comments, author snapshots, or relationship IDs. Browser clients cannot broadcast to this namespace. Restrictive namespace policies prevent a separate broad permissive policy from granting outsider access; unrelated topic policies retain their behavior.
+Database triggers pass private empty application payloads with an area name. Hosted `realtime.send` adds its own message UUID as transport metadata. They send no task text, comments, author snapshots, or relationship IDs. Browser clients cannot broadcast to this namespace. Restrictive namespace policies prevent a separate broad permissive policy from granting outsider access; unrelated topic policies retain their behavior.
 
 Every signal refetches canonical data through the existing RLS/RPC model. Notifications never become application rows or success events. Rolled-back changes leave no queued message. A notification delivery failure does not fail user CRUD; periodic reconciliation repairs missed hints.
 
@@ -78,6 +78,6 @@ PostgreSQL 17 passed 32 Realtime security/transaction checks on both fresh and u
 
 The local advisor scan reported no warnings/errors; informational findings were unused indexes in the fresh fixture and the intentionally policy-free private quota table. This is not a hosted Auth/advisor scan.
 
-The local queue fixture models PostgreSQL RLS and transactional messages, not Supabase's WebSocket service. Actual channel joins, delivery, two-browser timing, reconnect, and narrow-screen behavior remain manual checks after applying the SQL. Real JWT/API acceptance and final security review remain Phase 18. The agent has not applied this migration or changed hosted data/Auth/Realtime settings.
+The local queue fixture models PostgreSQL RLS and transactional messages, not Supabase's WebSocket service. Phase 18 now supplements it with real guest JWT/Data API calls and native WebSocket authorization/delivery checks; see the [results and remaining gates](phase18-verification.md). Two-browser timing, reconnect, and narrow-screen appearance still require browser review. The agent has not applied hosted migrations or changed Auth/Realtime settings; authorized temporary Phase 18 test data was removed.
 
 References: [Broadcast from the database](https://supabase.com/docs/guides/realtime/broadcast), [Realtime authorization and its cache](https://supabase.com/docs/guides/realtime/authorization), [Postgres Changes limitations](https://supabase.com/docs/guides/realtime/postgres-changes), and [database change subscriptions](https://supabase.com/docs/guides/realtime/subscribing-to-database-changes).

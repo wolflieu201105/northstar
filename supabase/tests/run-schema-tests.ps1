@@ -26,6 +26,7 @@ if ($resolvedDataPath.TrimEnd('\') -ine $expectedDataPath.TrimEnd('\')) {
 $schemaPath = Join-Path $workspacePath 'supabase\schema.sql'
 $realtimeMigration = Join-Path $workspacePath 'supabase\migrations\20261109141005_add_private_workspace_realtime.sql'
 $securityMigration = Join-Path $workspacePath 'supabase\migrations\20261109075450_secure_shared_group_operations.sql'
+$conflictMigration = Join-Path $workspacePath 'supabase\migrations\20261109151951_return_revision_conflicts_as_http_409.sql'
 $groupMigration = @(Get-ChildItem -LiteralPath (Join-Path $workspacePath 'supabase\migrations') -Filter '*_add_shared_group_foundation.sql')
 if ($groupMigration.Count -ne 1) { throw 'Expected one group-foundation migration.' }
 $marker = '-- Phase 12: clean shared-group foundation.'
@@ -75,6 +76,8 @@ try {
       $null = Invoke-SchemaSql -Database $testDatabase -File $securityMigration
       $null = Invoke-SchemaSql -Database $testDatabase -File $realtimeMigration
       $null = Invoke-SchemaSql -Database $testDatabase -File $realtimeMigration
+      $null = Invoke-SchemaSql -Database $testDatabase -File $conflictMigration
+      $null = Invoke-SchemaSql -Database $testDatabase -File $conflictMigration
     }
     $fingerprints[$variant] = Invoke-SchemaSql -Database $testDatabase -File (Join-Path $PSScriptRoot 'schema-fingerprint.sql')
     $checks = Invoke-SchemaSql -Database $testDatabase -File (Join-Path $PSScriptRoot 'groups\access.sql')
@@ -85,6 +88,9 @@ try {
     $realtimeChecks = Invoke-SchemaSql -Database $testDatabase -File (Join-Path $PSScriptRoot 'groups\realtime.sql')
     Write-Output ($variant + ': ' + (($realtimeChecks -split '\r?\n' | Where-Object { $_ -match '^\d+ realtime security and transaction checks passed$' }) -join '') + '.')
     $null = Invoke-SchemaSql -Database $testDatabase -File (Join-Path $workspacePath 'supabase\verify-phase17.sql')
+    $conflictChecks = Invoke-SchemaSql -Database $testDatabase -File (Join-Path $PSScriptRoot 'groups\conflicts.sql')
+    Write-Output ($variant + ': ' + (($conflictChecks -split '\r?\n' | Where-Object { $_ -match '^\d+ revision conflict checks passed$' }) -join '') + '.')
+    $null = Invoke-SchemaSql -Database $testDatabase -File (Join-Path $workspacePath 'supabase\verify-phase18.sql')
     if ($variant -eq 'reset') {
       & python (Join-Path $PSScriptRoot 'groups\concurrency.py') $psqlCommand "$Port" $testDatabase
       if ($LASTEXITCODE -ne 0) { throw 'Two-connection concurrency checks failed.' }

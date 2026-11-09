@@ -9,7 +9,9 @@ export function serviceError(error: unknown, fallback = 'The request failed.') {
   if (error instanceof ServiceError) return error
   const details = error as { message?: string; code?: string } | null
   const message = details?.message || (error instanceof Error ? error.message : fallback)
-  const code = details?.code ?? ''
+  // Keep one client conflict contract while old/new database installations coexist.
+  // PT409 is an HTTP conflict; raw 40001 makes some PostgREST versions retry forever.
+  const code = details?.code === 'PT409' ? '40001' : details?.code ?? ''
   const network = /failed to fetch|network|fetch failed|timeout|timed out/i.test(message)
   return new ServiceError(
     code === '40001'

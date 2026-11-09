@@ -7,9 +7,9 @@ The interface uses a restrained black-and-green visual system and supports deskt
 ## Project status
 
 - Accounts, groups, invitations, and group-scoped board: implemented through Phase 16; local tests/lint/build pass
-- Group SQL: Phases 12–13 verified; [Phase 17 additive migration](docs/realtime.md) ready
+- Group SQL: Phases 12–13/17 verified; [Phase 18 HTTP-conflict fix](docs/phase18-verification.md) ready to apply
 - Native email delivery and real two-browser flows: manual verification pending
-- Realtime synchronization: Phase 17 implemented and tested locally; additive SQL and two-browser review pending
+- Realtime synchronization: user-confirmed working; native authorized/denied WebSocket checks pass; extended browser review pending
 - Live demo: pending deployment
 - Source repository: pending publication
 
@@ -46,9 +46,9 @@ The current frontend uses the shared-group schema and checked APIs. See [Auth se
 - Accessible labels, focus states, dialog behavior, and reduced-motion support
 - Lazy-loaded board and task form bundles
 
-The roadmap is in [path-updates.md](path-updates.md), also linked from [update_path.md](update_path.md). Phases 14–16 implement accounts, groups, invitations, and scoped task work on the [Phase 13 API contract](docs/group-security.md). Phase 17 adds [private live updates and recovery](docs/realtime.md); its SQL/browser checkpoint is ready. Final verification and release remain Phases 18–19.
+The roadmap is in [path-updates.md](path-updates.md), also linked from [update_path.md](update_path.md). Phases 14–16 implement accounts, groups, invitations, and scoped task work on the [Phase 13 API contract](docs/group-security.md). Phase 17 adds [private live updates and recovery](docs/realtime.md). [Phase 18 verification](docs/phase18-verification.md) is in progress at its SQL-fix checkpoint; release remains Phase 19.
 
-**Existing verified database:** Apply only the [additive Phase 17 migration and verification](docs/realtime.md#sql-to-run-for-the-existing-project). Do not rerun the destructive reset. The [Auth configuration](docs/accounts-and-groups.md#supabase-auth-setup) remains the same.
+**Existing verified database:** Apply only the [additive Phase 18 HTTP-conflict fix and verification](docs/phase18-verification.md#sql-to-apply-now). Do not rerun the destructive reset. The [Auth configuration](docs/accounts-and-groups.md#supabase-auth-setup) remains the same.
 
 ## Technology
 
@@ -131,7 +131,7 @@ npm run build
 npm run preview
 ```
 
-The automated suite covers native Auth/callback behavior with mocks, group/invitation HTTP contracts, identity/group state isolation, access-loss and draft guards, task/comments/activity/label behavior, filters, dates, summaries, and rollback. Real email delivery, browser appearance, and real JWT isolation remain separate manual checks.
+The automated suite covers native Auth/callback behavior with mocks, group/invitation HTTP contracts, identity/group state isolation, access-loss and draft guards, task/comments/activity/label behavior, filters, dates, summaries, and rollback. Phase 18 additionally ran 179 real guest JWT/API/Realtime assertions with one explicitly skipped hosted conflict check. See [results, the opt-in API runner, and remaining acceptance](docs/phase18-verification.md); real email delivery, registered-user API repetition, and browser appearance remain open.
 
 ## Manual security verification
 
@@ -207,7 +207,7 @@ Edit source files under `src/`. `npm run build` regenerates `dist/` with hashed 
 
 ## Future improvements
 
-- Complete the Phase 17 hosted SQL and actual WebSocket/browser review
-- Complete real-browser and real-JWT multi-user acceptance checks
+- Apply the Phase 18 SQL fix and complete real HTTP conflict verification
+- Complete registered-user, email, and real-browser multi-user acceptance checks
 - Add persistent within-column ordering
 - Add end-to-end browser tests against a disposable Supabase project

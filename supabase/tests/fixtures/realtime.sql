@@ -9,8 +9,12 @@ create function realtime.topic() returns text language sql stable as $$
   select current_setting('realtime.topic',true)
 $$;
 create function realtime.send(payload jsonb,event text,topic text,private boolean default true)
-returns void language sql as $$
-  insert into realtime.messages(payload,event,topic,private) values(payload,event,topic,private)
+returns void language plpgsql as $$
+declare message_id uuid := gen_random_uuid();
+begin
+  insert into realtime.messages(id,payload,event,topic,private)
+    values(message_id,case when payload ? 'id' then payload else payload || jsonb_build_object('id',message_id) end,event,topic,private);
+end;
 $$;
 grant usage on schema realtime to authenticated, anon;
 grant select,insert on realtime.messages to authenticated,anon;

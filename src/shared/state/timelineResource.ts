@@ -21,7 +21,12 @@ export function createTimelineResource<T extends Row>(
   let pageRequest = 0
   let recentRequest = 0
   let recentFloor: T | undefined
+  let recentEnd: T | undefined
+  let contiguousEnd: T | undefined
   let needsRecent = false
+  function extendPrefix(row: T | undefined) {
+    if (row && (!contiguousEnd || compareTimelineRows(row, contiguousEnd) > 0)) contiguousEnd = row
+  }
   function report(error: unknown) {
     const problem = serviceError(error)
     if (problem.code === '42501') onAccessError?.()
@@ -35,16 +40,24 @@ export function createTimelineResource<T extends Row>(
     const previous = state.getSnapshot()
     if (more && (previous.isLoading || !previous.nextCursor)) return
     const version = ++pageRequest
-    if (!more && !preserve) { ++recentRequest; recentFloor = undefined }
+    if (!more && !preserve) { ++recentRequest; recentFloor = undefined; recentEnd = undefined }
     state.update({ isLoading: true, isLoadingMore: more, failedLoadMore: false, error: null })
     try {
       const page = await pageLoader(more ? previous.nextCursor! : undefined)
       if (!active || version !== pageRequest) return
       const current = state.getSnapshot()
       const retained = more || preserve ? current.items : [...confirmed.values()]
-      const cursor = preserve && loaded ? current.nextCursor : page.nextCursor
+      const pageEnd = page.items.at(-1)
+      // A first-page refresh may extend a formerly complete prefix. Do not discard
+      // its cursor, or rewind history that was already loaded beyond that page.
+      const extendsPrefix = pageEnd && (!contiguousEnd || compareTimelineRows(pageEnd, contiguousEnd) > 0)
+      const cursor = preserve && loaded && !extendsPrefix ? current.nextCursor : page.nextCursor
+      if (!more && !preserve) contiguousEnd = undefined
+      extendPrefix(pageEnd)
+      const nextCursor = closeGap(cursor)
+      if (!nextCursor) extendPrefix(recentEnd)
       loaded = true
-      state.update({ items: merge(retained, page.items), nextCursor: closeGap(cursor), isLoading: false, isLoadingMore: false })
+      state.update({ items: merge(retained, page.items), nextCursor, isLoading: false, isLoadingMore: false })
     } catch (error) {
       if (active && version === pageRequest) state.update({ isLoading: false, isLoadingMore: false, failedLoadMore: more, error: report(error) })
     } finally {
@@ -61,12 +74,15 @@ export function createTimelineResource<T extends Row>(
       if (!active || version !== recentRequest) return
       if (state.getSnapshot().isLoading) { needsRecent = true; return }
       const previous = state.getSnapshot()
-      const last = previous.items.at(-1)
       recentFloor = recent[0]
+      recentEnd = recent.at(-1)
       // More than one page may have arrived while disconnected. Keep a visible gap to fill.
-      const gap = !previous.nextCursor && last && recentFloor && compareTimelineRows(recentFloor, last) > 0 && recent.length === TIMELINE_PAGE_SIZE
-        ? cursorOf(last) : previous.nextCursor
-      state.update({ items: merge(previous.items, recent), nextCursor: closeGap(gap), error: previous.failedLoadMore ? previous.error : null, failedLoadMore: previous.failedLoadMore })
+      // Confirmed local posts are isolated rows, not proof that earlier history was read.
+      const gap = !previous.nextCursor && contiguousEnd && recentFloor && compareTimelineRows(recentFloor, contiguousEnd) > 0 && recent.length === TIMELINE_PAGE_SIZE
+        ? cursorOf(contiguousEnd) : previous.nextCursor
+      const nextCursor = closeGap(gap)
+      if (!nextCursor) extendPrefix(recentEnd)
+      state.update({ items: merge(previous.items, recent), nextCursor, error: previous.failedLoadMore ? previous.error : null, failedLoadMore: previous.failedLoadMore })
     } catch (error) {
       if (active && version === recentRequest) state.update({ error: report(error) })
     }

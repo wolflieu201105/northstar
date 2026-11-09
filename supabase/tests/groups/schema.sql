@@ -102,8 +102,8 @@ select test.expect_error($q$update public.group_invitations set status='accepted
 select test.expect_error($q$update public.group_invitations set expires_at=created_at$q$,
   '23514','invitation expiry must follow creation');
 
-insert into public.group_members(group_id,user_id,is_active,left_at)
-  select group_id,'22222222-2222-4222-8222-222222222222',false,clock_timestamp()
+insert into public.group_members(group_id,user_id,is_active,joined_at,left_at)
+  select group_id,'22222222-2222-4222-8222-222222222222',false,statement_timestamp(),statement_timestamp()
   from test_groups where user_id='11111111-1111-4111-8111-111111111111';
 select test.expect_error($q$insert into public.task_assignments(group_id,task_id,assignee_user_id)
   select group_id,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1','22222222-2222-4222-8222-222222222222'

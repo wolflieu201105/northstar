@@ -28,6 +28,24 @@ vi.mock('../services/tasks', async (importOriginal) => {
 const client = {} as AppClient
 
 describe('useTasks', () => {
+  it.each(['40001', '42501'])('retains the original %s save error after switching accounts, without using the old scope', async (code) => {
+    let fail!: (error: Error) => void
+    vi.mocked(updateTask).mockReturnValue(new Promise((_, reject) => { fail = reject }))
+    const revalidate = vi.fn()
+    const { result, rerender } = renderHook(({ userId }) => useTasks(client, userId, undefined, 'group-1', revalidate), { initialProps: { userId: 'account-A' } })
+    await waitFor(() => expect(result.current.tasks).toHaveLength(1))
+    let saving!: Promise<unknown>
+    act(() => { saving = result.current.editTask('task-1', { title: 'Draft' }).catch((error: unknown) => error) })
+    vi.mocked(fetchTasks).mockResolvedValue([])
+    rerender({ userId: 'account-B' })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    const conflict = Object.assign(new Error('This task is unavailable or changed remotely.'), { code })
+    await act(async () => { fail(conflict); expect(await saving).toMatchObject({ code }) })
+    expect(fetchTask).not.toHaveBeenCalled()
+    expect(revalidate).not.toHaveBeenCalled()
+    expect(result.current.tasks).toEqual([])
+    expect(result.current.notice).toBeNull()
+  })
   it('clears the previous identity even when both accounts can access the same group', async () => {
     let finish!: (tasks: ReturnType<typeof makeTask>[]) => void
     vi.mocked(fetchTasks).mockReturnValueOnce(new Promise((resolve) => { finish = resolve })).mockResolvedValueOnce([])

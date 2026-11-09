@@ -13,5 +13,9 @@ export function parseTaskView(value: unknown): TaskView {
     || !Array.isArray(value.labels) || !value.labels.every((label) => isLabel(label) && label.group_id === value.group_id)) {
     throw new Error('The server returned an invalid task. Reload the board before continuing.')
   }
-  return value as unknown as TaskView
+  const task = value as unknown as TaskView
+  return { ...task,
+    assignees: [...new Map(task.assignees.map((member) => [member.id, member])).values()],
+    labels: [...new Map(task.labels.map((label) => [label.id, label])).values()],
+  }
 }

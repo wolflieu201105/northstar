@@ -13,6 +13,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:api": "node --env-file=.env.local supabase/tests/api/run.mjs",
     "test:watch": "vitest"
   },
   "dependencies": {

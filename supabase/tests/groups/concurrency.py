@@ -82,7 +82,7 @@ def race(first_sql, second_sql, *, second_code=0, error_state=None, variables=()
 token = query(f"select updated_at::text from public.tasks where id='{T}';").stdout.strip()
 race(session(A) + f"select public.save_task('{G}','{T}','{{\"status\":\"in_progress\"}}',null,null,:'token');\n",
      session(B) + f"select public.save_task('{G}','{T}','{{\"status\":\"done\"}}',null,null,:'token');\n",
-     second_code=3, error_state="40001", variables=(f"token={token}",), name="northstar_conflict")
+     second_code=3, error_state="PT409", variables=(f"token={token}",), name="northstar_conflict")
 assert query(f"select status from public.tasks where id='{T}';").stdout.strip() == "in_progress"
 assert query(f"select count(*) from public.task_activity where task_id='{T}' and event_type='status_changed';").stdout.strip() == "1"
 

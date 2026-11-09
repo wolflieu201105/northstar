@@ -19,7 +19,7 @@ select test.assert_true(not private.can_receive_workspace_changes('northstar:gro
 select public.save_task('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa17','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb17',
   '{"title":"Confidential task content"}');
 reset role;
-select test.assert_true((select count(*)>0 and bool_and(private and payload='{}'::jsonb) from realtime.messages),'only private empty invalidations are queued');
+select test.assert_true((select count(*)>0 and bool_and(private and payload=jsonb_build_object('id',id)) from realtime.messages),'private invalidations contain only native transport IDs');
 select test.assert_true(not exists(select 1 from realtime.messages where payload::text like '%Confidential%'),'no task contents enter messages');
 select test.assert_true(exists(select 1 from realtime.messages where topic='northstar:group:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa17' and event='board'),'task changes invalidate the scoped board');
 select test.assert_true(exists(select 1 from realtime.messages where topic='northstar:group:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa17' and event='discussion'),'committed activity invalidates discussion');
@@ -86,7 +86,13 @@ select test.assert_true(exists(select 1 from public.comments where id='eeeeeeee-
 reset role;
 select test.assert_true((select count(*)::text=current_setting('test.outage_queue') from realtime.messages),'notification outage queues no fabricated success');
 create or replace function realtime.send(payload jsonb,event text,topic text,private boolean default true)
-returns void language sql as $$insert into realtime.messages(payload,event,topic,private) values(payload,event,topic,private)$$;
+returns void language plpgsql as $$
+declare message_id uuid := gen_random_uuid();
+begin
+  insert into realtime.messages(id,payload,event,topic,private)
+    values(message_id,case when payload ? 'id' then payload else payload || jsonb_build_object('id',message_id) end,event,topic,private);
+end;
+$$;
 set local role authenticated;
 select public.delete_task('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa17','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb17',
   (select updated_at from public.tasks where id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb17'));
