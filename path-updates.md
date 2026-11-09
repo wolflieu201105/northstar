@@ -632,9 +632,9 @@ Deliverables: [Realtime SQL/setup and review](docs/realtime.md), [additive migra
 
 ### Phase 18 — Verify security and the complete experience
 
-Owner: Codex | Status: In progress — additive SQL fix ready for review | Next action: Apply the Phase 18 HTTP-conflict migration and read-only verifier, then finish real conflict/registered-user/browser acceptance.
+Owner: Codex | Status: In progress — user confirmed SQL fix/verifier correct | Next action: Finish native HTTP-conflict, registered-user, and browser acceptance alongside the user-requested hosting checkpoint.
 
-Deliverable: [Phase 18 verification results and SQL checkpoint](docs/phase18-verification.md). 187 frontend tests across 35 files, lint, build, local fresh/reset parity, and three concurrent races pass. 179 actual guest/API/Realtime assertions passed with one explicit stale-conflict HTTP check skipped. Real stale saves exposed PostgREST's `40001` retry behavior; a new additive migration maps public revision errors to `PT409`. It is tested locally and not applied to the hosted project. Authorized temporary fixtures were removed. Production dependencies have no audit findings; the full audit's development-only minimatch advisory and hosted Auth/password findings are recorded for review. Phase 18 remains open for hosted fix verification, registered-user tokens, email/browser/mobile flows, and clean hosted installation.
+Deliverable: [Phase 18 verification results and SQL checkpoint](docs/phase18-verification.md). 187 frontend tests across 35 files, lint, build, local fresh/reset parity, and three concurrent races pass. 179 actual guest/API/Realtime assertions passed with one explicit stale-conflict HTTP check skipped. Real stale saves exposed PostgREST's `40001` retry behavior; a new additive migration maps public revision errors to `PT409`. It is tested locally, and the user confirmed the hosted migration/verifier are correct; the full native HTTP-conflict rerun remains open. Authorized temporary fixtures were removed. Production dependencies have no audit findings; the full audit's development-only minimatch advisory and hosted Auth/password findings are recorded for review. Phase 18 remains open for hosted fix verification, registered-user tokens, email/browser/mobile flows, and clean hosted installation.
 
 #### 18.1 Test application behavior
 
@@ -684,7 +684,7 @@ Use actual guest and registered-user access tokens against the Data API/RPC in a
 
 ### Phase 19 — Update documentation and release
 
-Owner: ___ | Status: Not started | Next action: Document verified features and prepare the reviewed release.
+Owner: Codex | Status: In progress — hosting requested by user | Next action: Deploy the prepared Vite app using the Vercel guide, configure Supabase production Auth URLs, and review the first hosted build. Remaining Phase 18 acceptance gates stay open.
 
 #### 19.1 Update the project handoff
 

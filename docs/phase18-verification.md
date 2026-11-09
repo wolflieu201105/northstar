@@ -1,6 +1,6 @@
 # Phase 18 verification checkpoint
 
-Phase 18 is in progress. The user confirmed Phase 17 live updates working. Local regression checks and real guest Data API/Realtime checks now pass, with the hosted stale-revision check explicitly skipped pending the SQL fix below. Registered-user, email, mobile, and complete browser acceptance remain open. Phase 19 has not started.
+Phase 18 is in progress. The user confirmed Phase 17 live updates working and subsequently confirmed the Phase 18 SQL verifier is correct. Local regression checks and real guest Data API/Realtime checks pass; the last hosted run explicitly skipped the stale-revision check, which still needs a full native HTTP rerun after the user-applied fix. Registered-user, email, mobile, and complete browser acceptance remain open. At the user's request, Phase 19 hosting preparation has started; see the [Vercel deployment guide](vercel-deployment.md).
 
 ## SQL to apply now
 
@@ -14,7 +14,7 @@ This additive migration changes three public function wrappers. It preserves arg
 
 The real HTTP test found that a deliberately stale task save timed out instead of returning its conflict. The previous implementation raised SQLSTATE `40001`. This matches [Supabase's documented PostgREST retry-loop issue](https://supabase.com/kb/troubleshooting/high-cpu-and-infinite-transaction-retries-when-using-custom-error-codes-in-rpc-functions-77326b): a business revision mismatch must use a nonretryable error. The public invoker wrappers now catch the internal serialization signal and raise `PT409`, which [PostgREST maps to HTTP 409](https://docs.postgrest.org/en/stable/references/errors.html#raise-errors-with-http-status-codes).
 
-The frontend recognizes both old `40001` responses and new `PT409` responses through its existing conflict handling. It preserves drafts, reads the latest task, and requires review before retrying. The hosted fix itself has not been applied by the agent, so prompt HTTP conflict delivery is still an acceptance gate. Temporary test groups were deleted, ending access to their tasks; no project restart or unrelated backend termination was performed.
+The frontend recognizes both old `40001` responses and new `PT409` responses through its existing conflict handling. It preserves drafts, reads the latest task, and requires review before retrying. The user now reports the hosted migration/verifier are correct; the agent has not rerun the complete HTTP conflict check since that confirmation. Prompt HTTP conflict delivery remains an acceptance gate. Temporary test groups were deleted, ending access to their tasks; no project restart or unrelated backend termination was performed.
 
 ## Checks completed on November 9, 2026
 
@@ -59,7 +59,7 @@ The diagnostic `--skip-conflicts` option explicitly prints **PARTIAL** and does 
 
 ## Remaining acceptance before Phase 19
 
-- Apply the additive migration, verify its three wrappers, and rerun the guest runner without `--skip-conflicts`.
+- The user confirmed the additive migration/verifier are correct. Rerun the guest runner without `--skip-conflicts` to finish native HTTP acceptance.
 - Repeat the API boundaries with registered-user tokens in a disposable project. The automated hosted run used guest tokens only.
 - Verify native confirmation/recovery, expiry/resume, and guest registration preserving the exact UUID and all work when signing in elsewhere. The user reported account setup working; the agent has not independently exercised real email delivery.
 - Review keyboard/touch and narrow-screen appearance, dirty concurrent edits, offline/reconnect, invitation changes, and removal with an open dirty detail in two actual browsers ([Realtime checklist](realtime.md#review-with-two-independent-browsers)). Component tests and Node WebSockets do not establish browser appearance or timing.

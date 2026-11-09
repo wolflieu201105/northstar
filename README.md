@@ -149,7 +149,7 @@ Register an anonymous guest before signing out or clearing browser storage to re
 
 ## Deploying to Vercel
 
-The repository works with Vercel's Vite framework detection and requires no custom deployment configuration.
+The repository includes a minimal `vercel.json` for Vite, `npm ci`, `npm run build`, and `dist`. Follow the [deployment guide](docs/vercel-deployment.md) for the exact dashboard settings, environment variables, and Supabase production callback URLs.
 
 1. Push the repository to GitHub.
 2. Import the repository into Vercel.
