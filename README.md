@@ -7,9 +7,9 @@ The interface uses a restrained black-and-green visual system and supports deskt
 ## Project status
 
 - Accounts, groups, invitations, and group-scoped board: implemented through Phase 16; local tests/lint/build pass
-- Group SQL: user-reported verification passed; no new SQL needed for Phases 14–16
+- Group SQL: Phases 12–13 verified; [Phase 17 additive migration](docs/realtime.md) ready
 - Native email delivery and real two-browser flows: manual verification pending
-- Realtime synchronization: Phase 17, not started
+- Realtime synchronization: Phase 17 implemented and tested locally; additive SQL and two-browser review pending
 - Live demo: pending deployment
 - Source repository: pending publication
 
@@ -40,14 +40,15 @@ The current frontend uses the shared-group schema and checked APIs. See [Auth se
 - Combined search, priority, multiple-assignee, and multiple-label filters with removable chips
 - Unassigned/Unlabeled modes and archived labels still linked to tasks
 - Whole-board total, completed, and overdue summaries alongside filtered result counts
+- Private live updates with background reconciliation, reconnect/periodic recovery, and connection status
 - Loading, empty, configuration, error, retry, and save states
 - Responsive horizontal board navigation on narrow screens
 - Accessible labels, focus states, dialog behavior, and reduced-motion support
 - Lazy-loaded board and task form bundles
 
-The roadmap is in [path-updates.md](path-updates.md), also linked from [update_path.md](update_path.md). Phases 14–16 implement accounts, groups, invitations, and scoped task work on the [Phase 13 API contract](docs/group-security.md). Phase 17 adds Realtime; final verification and release remain Phases 18–19.
+The roadmap is in [path-updates.md](path-updates.md), also linked from [update_path.md](update_path.md). Phases 14–16 implement accounts, groups, invitations, and scoped task work on the [Phase 13 API contract](docs/group-security.md). Phase 17 adds [private live updates and recovery](docs/realtime.md); its SQL/browser checkpoint is ready. Final verification and release remain Phases 18–19.
 
-**Existing verified database:** No further SQL is needed for this frontend batch. Do not rerun the destructive reset. New installations can follow the [SQL setup guide](docs/shared-groups-migration.md); existing verified installations only need the [Auth configuration](docs/accounts-and-groups.md#supabase-auth-setup).
+**Existing verified database:** Apply only the [additive Phase 17 migration and verification](docs/realtime.md#sql-to-run-for-the-existing-project). Do not rerun the destructive reset. The [Auth configuration](docs/accounts-and-groups.md#supabase-auth-setup) remains the same.
 
 ## Technology
 
@@ -138,7 +139,7 @@ Use two independent browser profiles so Supabase creates Guest A and Guest B.
 
 1. Check private-group isolation, then invite B to a shared group from A's Members page.
 2. Confirm B has no board access until B accepts in Invitations.
-3. Create/edit/assign/comment as both accounts; use explicit refresh between browsers.
+3. After Phase 17 setup, create/edit/assign/comment as both accounts and check automatic updates; manual refresh remains available.
 4. Register A's guest, complete native email/password setup, and confirm its UUID/work/memberships remain.
 5. Test account/group switching, drafts, recovery, ownership transfer, and removal while a detail is open.
 
@@ -172,6 +173,7 @@ src/
     auth/           Native sessions, PKCE callbacks, guest conversion, and recovery
     account/        Profile and account forms/services
     groups/         Groups, memberships, invitations, ownership, and scoped state
+    live/           Private channels, refresh queue, recovery hooks, and connection status
     board/          Board layout, filters, summary, and loading/empty states
     tasks/          Task forms, cards, details, hooks, services, and stores
     team/           Real-account avatars and assignee controls
@@ -201,11 +203,11 @@ Edit source files under `src/`. `npm run build` regenerates `dist/` with hashed 
 
 - Anonymous accounts cannot be recovered after their browser session is lost.
 - Dragging changes task status but does not persist arbitrary ordering within a column.
-- Shared updates require explicit refresh or focus revalidation; Realtime synchronization is the next phase.
+- Live updates require the Phase 17 SQL and private-channel setup. Background reconciliation repairs missed notifications; offline changes cannot sync until connectivity returns.
 
 ## Future improvements
 
-- Add authorized Realtime subscriptions and reconnect/periodic access recovery
+- Complete the Phase 17 hosted SQL and actual WebSocket/browser review
 - Complete real-browser and real-JWT multi-user acceptance checks
 - Add persistent within-column ordering
 - Add end-to-end browser tests against a disposable Supabase project

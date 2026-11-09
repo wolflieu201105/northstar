@@ -1,0 +1,58 @@
+import { describe, expect, it, vi } from 'vitest'
+import { createTimelineResource } from './timelineResource'
+import type { TimelinePage } from '../types/timeline'
+
+const row = (index: number) => ({ id: String(index).padStart(4,'0'), created_at: `2026-11-09T14:00:00.${String(index).padStart(6,'0')}Z` })
+const cursor = (index: number) => ({ id: row(index).id, createdAt: row(index).created_at })
+const range = (start: number, length: number) => Array.from({ length }, (_, index) => row(start + index))
+describe('live append-only timelines', () => {
+  it('keeps loaded history and shows new tail rows with a gap that pagination can close', async () => {
+    const page = vi.fn().mockResolvedValueOnce({ items: range(1,50), nextCursor: cursor(50) }).mockResolvedValueOnce({ items: range(51,50), nextCursor: cursor(100) })
+    const recent = vi.fn().mockResolvedValue(range(81,50))
+    const store = createTimelineResource(page, recent)
+    store.start(); await vi.waitFor(() => expect(store.getSnapshot().isLoading).toBe(false))
+    await store.refresh()
+    expect(store.getSnapshot().items).toHaveLength(100)
+    expect(store.getSnapshot().nextCursor).toEqual(cursor(50))
+    await store.load(true)
+    expect(store.getSnapshot().items).toEqual(range(1,130))
+    expect(store.getSnapshot().nextCursor).toBeNull()
+    store.stop()
+  })
+  it('creates an explicit gap if more than a page arrives after a previously complete history', async () => {
+    const page = vi.fn().mockResolvedValue({ items: range(1,10), nextCursor: null })
+    const recent = vi.fn().mockResolvedValue(range(61,50))
+    const store = createTimelineResource(page, recent)
+    store.start(); await vi.waitFor(() => expect(store.getSnapshot().isLoading).toBe(false))
+    await store.refresh()
+    expect(store.getSnapshot().nextCursor).toEqual(cursor(10))
+    expect(store.getSnapshot().items).toEqual([...range(1,10), ...range(61,50)])
+    store.stop()
+  })
+  it('retains a failed page and exact retry cursor while a live tail succeeds', async () => {
+    const page = vi.fn().mockResolvedValueOnce({ items: range(1,50), nextCursor: cursor(50) }).mockRejectedValueOnce(new Error('Page failed')).mockResolvedValueOnce({ items: range(51,10), nextCursor: null })
+    const store = createTimelineResource(page, vi.fn().mockResolvedValue(range(60,2)))
+    store.start(); await vi.waitFor(() => expect(store.getSnapshot().isLoading).toBe(false))
+    await store.load(true); await store.refresh()
+    expect(store.getSnapshot()).toMatchObject({ failedLoadMore: true, error: 'Page failed', nextCursor: cursor(50) })
+    await store.retry()
+    expect(page).toHaveBeenNthCalledWith(3, cursor(50))
+    expect(store.getSnapshot().items).toEqual(range(1,61))
+    store.stop()
+  })
+  it('catches up after an initial read and ignores old live responses after stopping', async () => {
+    let finishPage!: (page: TimelinePage<ReturnType<typeof row>>) => void
+    let finishRecent!: (rows: ReturnType<typeof row>[]) => void
+    const page = vi.fn().mockImplementation(() => new Promise<TimelinePage<ReturnType<typeof row>>>((resolve) => { finishPage = resolve }))
+    const recent = vi.fn().mockImplementation(() => new Promise<ReturnType<typeof row>[]>((resolve) => { finishRecent = resolve }))
+    const store = createTimelineResource(page, recent)
+    store.start(); await store.refresh()
+    expect(recent).not.toHaveBeenCalled()
+    finishPage({ items: [row(1)], nextCursor: null })
+    await vi.waitFor(() => expect(recent).toHaveBeenCalledOnce())
+    store.stop()
+    finishRecent([row(2)])
+    await Promise.resolve()
+    expect(store.getSnapshot().items).toEqual([row(1)])
+  })
+})

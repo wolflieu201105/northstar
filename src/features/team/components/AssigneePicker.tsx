@@ -17,5 +17,10 @@ export function AssigneePicker({ members, assignedMembers = [], ...props }: Assi
     .sort((a, b) => a.display_name.localeCompare(b.display_name))
     .map((member) => ({ id: member.id, name: `${member.display_name} (@${member.username})`,
       color: member.avatar_color, archived_at: active.has(member.id) ? null : 'unavailable' }))
+  for (const id of props.selectedIds) {
+    if (!options.some((option) => option.id === id)) {
+      options.push({ id, name: `Account ${id}`, color: null, archived_at: 'unavailable' })
+    }
+  }
   return <TaskRelationPicker {...props} title="Assignees" options={options} manageLabel="Manage members" unavailableLabel="Unavailable" emptySelectionLabel="Unassigned" />
 }

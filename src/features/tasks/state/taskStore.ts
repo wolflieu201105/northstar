@@ -17,6 +17,7 @@ export function createTaskStore(client: AppClient | null, groupId: string | unde
   const pending = new Set<string>()
   const createIds = new Map<string, string>()
   let active = false
+  let hasLoaded = false
   let loadRequest = 0
   let mutationVersion = 0
   function context() {
@@ -39,15 +40,16 @@ export function createTaskStore(client: AppClient | null, groupId: string | unde
     ++mutationVersion
     state.update({ pendingIds: new Set(pending) })
   }
-  async function reload() {
+  async function reload(background = false) {
     if (!client || !groupId || !active) return
     const request = ++loadRequest
     const version = mutationVersion
-    state.update({ isLoading: true, loadError: null })
+    state.update({ isLoading: !background || !hasLoaded, loadError: null })
     try {
       const rows = await fetchTasks(client, groupId)
       if (!active || request !== loadRequest) return
-      if (version !== mutationVersion) { void reload(); return }
+      if (version !== mutationVersion) { void reload(background); return }
+      hasLoaded = true
       const current = state.getSnapshot().tasks
       state.update({ tasks: [
         ...rows.map((row) => pending.has(row.id) ? current.find((task) => task.id === row.id) ?? row : row),
@@ -132,7 +134,7 @@ export function createTaskStore(client: AppClient | null, groupId: string | unde
     } finally { release(id) }
   }
   return {
-    ...state, reload, addTask, editTask, removeTask, moveTask,
+    ...state, reload: () => reload(), refresh: () => reload(true), addTask, editTask, removeTask, moveTask,
     start() { active = true; void reload() },
     stop() { active = false; ++loadRequest },
     dismissNotice() { state.update({ notice: null }) },

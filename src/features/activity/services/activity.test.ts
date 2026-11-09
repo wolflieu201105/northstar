@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { describe, expect, it, vi } from 'vitest'
 import type { Database } from '../../../shared/types/database'
 import { makeActivity } from '../../../test/fixtures'
-import { fetchActivity } from './activity'
+import { fetchActivity, fetchRecentActivity } from './activity'
 
 function clientWith(fetch: typeof globalThis.fetch) {
   return createClient<Database>('https://example.supabase.co', 'sb_publishable_test', {
@@ -14,6 +14,15 @@ function response(body: unknown, status = 200) {
 }
 
 describe('activity read contracts', () => {
+  it('fetches recent activity in the current task/group and keeps safe parsing', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(response([makeActivity()]))
+    expect(await fetchRecentActivity(clientWith(fetch), 'group-1', 'task-1')).toEqual([makeActivity()])
+    const url = new URL(String(fetch.mock.calls[0][0]))
+    expect(url.searchParams.get('group_id')).toBe('eq.group-1')
+    expect(url.searchParams.get('task_id')).toBe('eq.task-1')
+    expect(url.searchParams.get('order')).toBe('created_at.desc,id.desc')
+    expect(url.searchParams.get('limit')).toBe('50')
+  })
   it('reads a bounded owned task page with full timestamp/ID precision and safely parses unknown events', async () => {
     const rows = Array.from({ length: 51 }, (_, index) => makeActivity({ id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`, created_at: '2026-11-09T05:00:00.123456+00:00' }))
     const unknown = { ...rows[0], event_type: 'future_event', payload: { version: 7, raw: '<script>bad()</script>' } }

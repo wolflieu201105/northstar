@@ -24,6 +24,7 @@ if ($resolvedDataPath.TrimEnd('\') -ine $expectedDataPath.TrimEnd('\')) {
   throw "Refusing tests outside the dedicated cluster at $expectedDataPath."
 }
 $schemaPath = Join-Path $workspacePath 'supabase\schema.sql'
+$realtimeMigration = Join-Path $workspacePath 'supabase\migrations\20261109141005_add_private_workspace_realtime.sql'
 $securityMigration = Join-Path $workspacePath 'supabase\migrations\20261109075450_secure_shared_group_operations.sql'
 $groupMigration = @(Get-ChildItem -LiteralPath (Join-Path $workspacePath 'supabase\migrations') -Filter '*_add_shared_group_foundation.sql')
 if ($groupMigration.Count -ne 1) { throw 'Expected one group-foundation migration.' }
@@ -42,7 +43,7 @@ $foundationBody = $foundationBody.Substring(0,$foundationBody.Length-7).Trim()
 if ($schemaText.Substring($schemaFoundationStart,$schemaSecurityStart-$schemaFoundationStart).Trim() -cne $foundationBody) {
   throw 'Fresh and reset foundation SQL differ.'
 }
-if ($schemaText.Substring($schemaSecurityStart).Trim() -cne $securityText.Substring($securityText.IndexOf($securityMarker)).Trim()) {
+if ($schemaText.Substring($schemaSecurityStart,$schemaText.IndexOf('-- Phase 17:')-$schemaSecurityStart).Trim() -cne $securityText.Substring($securityText.IndexOf($securityMarker),$securityText.IndexOf("notify pgrst")-$securityText.IndexOf($securityMarker)).Trim()) {
   throw 'Fresh and upgrade security SQL differ.'
 }
 
@@ -56,6 +57,7 @@ try {
     $null = Invoke-SchemaSql -Database 'postgres' -Query "create database $testDatabase;"
     $createdDatabases += $testDatabase
     $null = Invoke-SchemaSql -Database $testDatabase -File (Join-Path $PSScriptRoot 'fixtures\bootstrap.sql')
+    $null = Invoke-SchemaSql -Database $testDatabase -File (Join-Path $PSScriptRoot 'fixtures\realtime.sql')
     # Exercise installations whose default table grants would otherwise expose data.
     $null = Invoke-SchemaSql -Database $testDatabase -Query 'alter default privileges in schema public grant select,insert,update,delete on tables to anon,authenticated;'
     if ($variant -eq 'fresh') {
@@ -71,6 +73,8 @@ try {
       Write-Output (($foundationChecks -split '\r?\n' | Where-Object { $_ -match '^\d+ group foundation checks passed$' }) + ' before Phase 13.')
       $null = Invoke-SchemaSql -Database $testDatabase -File $securityMigration
       $null = Invoke-SchemaSql -Database $testDatabase -File $securityMigration
+      $null = Invoke-SchemaSql -Database $testDatabase -File $realtimeMigration
+      $null = Invoke-SchemaSql -Database $testDatabase -File $realtimeMigration
     }
     $fingerprints[$variant] = Invoke-SchemaSql -Database $testDatabase -File (Join-Path $PSScriptRoot 'schema-fingerprint.sql')
     $checks = Invoke-SchemaSql -Database $testDatabase -File (Join-Path $PSScriptRoot 'groups\access.sql')
@@ -78,6 +82,9 @@ try {
     if (-not $summary) { throw "No successful check summary for $variant." }
     Write-Output ($variant + ': ' + $summary + '.')
     $null = Invoke-SchemaSql -Database $testDatabase -File (Join-Path $workspacePath 'supabase\verify-phase13.sql')
+    $realtimeChecks = Invoke-SchemaSql -Database $testDatabase -File (Join-Path $PSScriptRoot 'groups\realtime.sql')
+    Write-Output ($variant + ': ' + (($realtimeChecks -split '\r?\n' | Where-Object { $_ -match '^\d+ realtime security and transaction checks passed$' }) -join '') + '.')
+    $null = Invoke-SchemaSql -Database $testDatabase -File (Join-Path $workspacePath 'supabase\verify-phase17.sql')
     if ($variant -eq 'reset') {
       & python (Join-Path $PSScriptRoot 'groups\concurrency.py') $psqlCommand "$Port" $testDatabase
       if ($LASTEXITCODE -ne 0) { throw 'Two-connection concurrency checks failed.' }

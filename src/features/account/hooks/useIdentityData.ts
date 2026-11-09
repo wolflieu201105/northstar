@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react'
 import type { AppClient } from '../../../shared/lib/supabase'
+import { useLiveRefresh } from '../../live/hooks/useLiveRefresh'
 import { createResource } from '../../../shared/state/resource'
 import { fetchProfile, saveProfile } from '../services/profiles'
 import { fetchGroups } from '../../groups/services/groups'
@@ -12,12 +13,11 @@ export function useIdentityData(client: AppClient, userId: string) {
   }), [client, userId])
   const profile = useSyncExternalStore(store.profile.subscribe, store.profile.getSnapshot)
   const groups = useSyncExternalStore(store.groups.subscribe, store.groups.getSnapshot)
+  useLiveRefresh('directory', store.groups.refresh)
+  useLiveRefresh('profile', store.profile.refresh)
   useEffect(() => {
     store.profile.start(); store.groups.start()
-    const resume = () => { if (document.visibilityState === 'visible') { void store.groups.reload(); void store.profile.reload() } }
-    window.addEventListener('focus', resume)
-    document.addEventListener('visibilitychange', resume)
-    return () => { store.profile.stop(); store.groups.stop(); window.removeEventListener('focus', resume); document.removeEventListener('visibilitychange', resume) }
+    return () => { store.profile.stop(); store.groups.stop() }
   }, [store])
   return {
     profile: profile.items[0], profileLoading: profile.isLoading, profileError: profile.error,

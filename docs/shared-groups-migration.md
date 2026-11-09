@@ -2,15 +2,15 @@
 
 The user approved discarding the old application database on November 9, 2026. The complete group backend was prepared and tested locally; the user subsequently reported its verification passed. The agent did not run the hosted reset.
 
-**Phases 14–16 now use this backend.** The existing verified project needs no new SQL. Do not rerun the reset: it would erase new group work. Configure [native Auth and callback URLs](accounts-and-groups.md) and review the account/group screens.
+**The existing group backend is verified.** Phase 17 adds a [separate additive Realtime migration](realtime.md); run that migration and its verifier for live updates. Do not rerun the reset. Native [Auth configuration](accounts-and-groups.md) stays the same.
 
 ## Your current project
 
 The user confirmed the complete backend verification passed. The following is the original install/reset procedure, only for an intentional new installation or destructive reset:
 
 1. Open the intended Supabase project's **SQL Editor** and create a new query.
-2. Paste the **entire** [reset.sql](../supabase/reset.sql), including `begin;` and `commit;`, and run it once. It deletes Northstar application data and installs both the foundation and Phase 13 APIs in one transaction.
-3. In a separate query, paste and run [verify-phase13.sql](../supabase/verify-phase13.sql). This is read-only.
+2. Paste the **entire** [reset.sql](../supabase/reset.sql), including `begin;` and `commit;`, and run it once. It deletes Northstar application data and installs the foundation, Phase 13 APIs, and Phase 17 live-update support in one transaction.
+3. In a separate query, paste and run [verify-phase13.sql](../supabase/verify-phase13.sql) and [verify-phase17.sql](../supabase/verify-phase17.sql). Both are read-only.
 4. Keep your existing project URL and public key in `.env.local` when using the same project. Configure native Auth using the [account guide](accounts-and-groups.md).
 
 You do not need to delete tables manually or run individual migration files after `reset.sql`. Never run the test fixtures in the hosted SQL Editor. Running the reset again deletes new group data too.
@@ -23,11 +23,12 @@ Choose exactly the installer matching the database:
 
 | Starting point | SQL to run |
 | --- | --- |
-| Current old project, or deliberately discard all application data | [reset.sql](../supabase/reset.sql), then [verify-phase13.sql](../supabase/verify-phase13.sql). |
-| New/empty application schema | [schema.sql](../supabase/schema.sql), then [verify-phase13.sql](../supabase/verify-phase13.sql). |
-| Phase 12 foundation already installed and its new data should remain | [20261109075450_secure_shared_group_operations.sql](../supabase/migrations/20261109075450_secure_shared_group_operations.sql), then [verify-phase13.sql](../supabase/verify-phase13.sql). |
+| Verified Phase 13 project, retaining current work | Only the [Phase 17 additive migration and verifier](realtime.md). |
+| Deliberately discard all application data | [reset.sql](../supabase/reset.sql), then the Phase 13 and Phase 17 verifiers. |
+| New/empty application schema | [schema.sql](../supabase/schema.sql), then the Phase 13 and Phase 17 verifiers. |
+| Phase 12 foundation already installed and its new data should remain | [20261109075450_secure_shared_group_operations.sql](../supabase/migrations/20261109075450_secure_shared_group_operations.sql), then the [Phase 17 migration](realtime.md) and both verifiers. |
 
-Do not run the clean schema over existing tables, or run both complete installers. The [Phase 12 foundation migration](../supabase/migrations/20261109072133_add_shared_group_foundation.sql) remains a source/checkpoint file; the complete reset is the straightforward installation for this project. Retired private-schema migrations are not required and are no longer present.
+Do not run the clean schema over existing tables, or run both complete installers. The [Phase 12 foundation migration](../supabase/migrations/20261109072133_add_shared_group_foundation.sql) remains a source/checkpoint file; the complete reset is only for an intentional destructive installation. Retired private-schema migrations are not required and are no longer present.
 
 ## Expected verification
 

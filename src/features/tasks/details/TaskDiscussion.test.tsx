@@ -70,7 +70,7 @@ describe('Task comments', () => {
     fireEvent.change(screen.getByLabelText('Write a comment'), { target: { value: 'Latest update' } })
     fireEvent.click(screen.getByRole('button', { name: 'Post comment' }))
     await screen.findByText('Comment posted.')
-    expect(screen.getByText('More comments appear before your recent update.')).toBeVisible()
+    expect(screen.getByText('More comments appear before these recent updates.')).toBeVisible()
     const load = screen.getByRole('button', { name: 'Load more comments' })
     expect(Boolean(load.compareDocumentPosition(screen.getByText('Latest update')) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true)
     fireEvent.click(load)

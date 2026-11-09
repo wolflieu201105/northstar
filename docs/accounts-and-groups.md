@@ -2,6 +2,8 @@
 
 These phases connect the installed Phase 13 backend to real accounts, accepted group membership, and the existing board. The user confirmed the SQL verification on November 9, 2026. This batch adds no SQL migration or dependencies. Do not rerun `reset.sql`: it would erase the new group data.
 
+Phase 17 now adds [live updates and recovery](realtime.md). Its additive SQL/private-channel setup is a separate checkpoint; the account configuration below stays the same.
+
 ## Supabase Auth setup
 
 Keep the current project URL and browser publishable key in `.env.local`. In the Supabase dashboard's Authentication settings:
@@ -47,7 +49,7 @@ All active members edit tasks, manage labels, and invite accounts. Owners additi
 - Comments display saved `author_name`; activity displays `actor_name` and version 2 assignment/name snapshots. Current profile changes do not rewrite history.
 - Focus/visibility changes, manual refresh, and authorization failures revalidate access. A successful directory refresh that confirms removal clears the board/details even with a dirty draft; a temporary network failure retains the current draft.
 
-There are no Realtime subscriptions in this batch. Use **Refresh group**, **Refresh members**, and **Refresh invitations** between browsers. Phase 17 adds automatic synchronization, periodic access checks, and reconnect behavior.
+Phase 17 adds private subscriptions, background updates, periodic access checks, and reconnect recovery. Follow the [Realtime setup and review](realtime.md). The existing refresh buttons remain available; Phases 14–16 alone still use manual/focus refresh.
 
 ## Manual review checkpoint
 

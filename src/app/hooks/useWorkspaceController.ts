@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { useDraftProtection } from '../../shared/hooks/useDraftProtection'
 import type { AppClient } from '../../shared/lib/supabase'
+import { useActiveGroupSync } from '../../features/live/hooks/useLiveRefresh'
 import { useIdentityData } from '../../features/account/hooks/useIdentityData'
 import { useWorkspaceData } from '../../features/workspace/useWorkspaceData'
 import { useTasks } from '../../features/tasks/hooks/useTasks'
@@ -15,6 +16,7 @@ export function useWorkspaceController(client: AppClient, session: Session) {
   const navigation = useWorkspaceNavigation()
   const group = identity.groups.find((row) => row.id === navigation.groupId)
   const groupId = group?.id
+  useActiveGroupSync(groupId)
   const workspace = useWorkspaceData(client, session.user.id, groupId, identity.reloadGroups)
   const taskState = useTasks(client, session.user.id, workspace, groupId, identity.reloadGroups)
   useDraftProtection(false, taskState.pendingIds.size > 0, navigation.registerGuard)

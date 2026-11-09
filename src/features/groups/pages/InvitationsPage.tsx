@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import type { AppClient } from '../../../shared/lib/supabase'
+import { useLiveRefresh } from '../../live/hooks/useLiveRefresh'
 import { createInvitationStore } from '../state/invitationStore'
 import { respondInvitation, revokeInvitation } from '../services/groups'
 import { useAction } from '../../../shared/hooks/useAction'
@@ -15,6 +16,7 @@ export function InvitationsPage({ client, userId, registerGuard, onChanged }: Pr
   const [tab, setTab] = useState<'incoming' | 'sent'>('incoming')
   const action = useAction()
   const now = useActivityClock()
+  useLiveRefresh('invitations', store.refresh)
   useEffect(() => { store.start(); return () => store.stop() }, [store])
   useDraftProtection(false, action.busy, registerGuard)
   const rows = state.items.filter((row) => tab === 'incoming' ? row.recipient_user_id === userId : row.recipient_user_id !== userId)

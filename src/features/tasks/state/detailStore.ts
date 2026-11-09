@@ -1,75 +1,26 @@
 import type { AppClient } from '../../../shared/lib/supabase'
-import type { TaskActivity } from '../../activity/types'
-import type { TaskComment } from '../../comments/types'
-import type { PaginatedTimelineState as ListState } from '../../../shared/types/timeline'
-import { fetchActivity } from '../../activity/services/activity'
-import { createComment, fetchComments } from '../../comments/services/comments'
+import { fetchActivity, fetchRecentActivity } from '../../activity/services/activity'
+import { createComment, fetchComments, fetchRecentComments } from '../../comments/services/comments'
 import { serviceError } from '../../../shared/services/errors'
 import { observable } from '../../../shared/state/observable'
+import { createTimelineResource } from '../../../shared/state/timelineResource'
 import { normalizeCommentBody } from '../../comments/utils'
-import { compareTimelineRows } from '../../../shared/lib/timelineOrder'
-
-interface DetailState {
-  comments: ListState<TaskComment>
-  activity: ListState<TaskActivity>
-  commentDraft: string
-  isPosting: boolean
-  commentSaveError: string | null
-}
-const emptyList = <Row>(isLoading = false): ListState<Row> => ({ items: [], nextCursor: null, isLoading, isLoadingMore: false, failedLoadMore: false, error: null })
-function mergeRows<Row extends { id: string; created_at: string }>(old: Row[], incoming: Row[]) {
-  return [...new Map([...old, ...incoming].map((row) => [row.id, row])).values()]
-    .sort(compareTimelineRows)
-}
 
 export function createDetailStore(client: AppClient | null, userId: string | undefined, taskId: string | null, groupId?: string, onAccessError?: () => void) {
-  const initiallyLoading = Boolean(client && userId && groupId && taskId)
-  const state = observable<DetailState>({ comments: emptyList(initiallyLoading), activity: emptyList(initiallyLoading), commentDraft: '', isPosting: false, commentSaveError: null })
-  const requests = { comments: 0, activity: 0 }
-  const commentIntents = new Map<string, string>()
-  const confirmedComments = new Map<string, TaskComment>()
+  const ready = Boolean(client && userId && groupId && taskId)
+  const comments = createTimelineResource(
+    ready ? (cursor) => fetchComments(client!, groupId!, taskId!, cursor) : null,
+    ready ? () => fetchRecentComments(client!, groupId!, taskId!) : null, onAccessError)
+  const activity = createTimelineResource(
+    ready ? (cursor) => fetchActivity(client!, groupId!, taskId!, cursor) : null,
+    ready ? () => fetchRecentActivity(client!, groupId!, taskId!) : null, onAccessError)
+  const state = observable({ comments: comments.getSnapshot(), activity: activity.getSnapshot(), commentDraft: '', isPosting: false, commentSaveError: null as string | null })
+  comments.subscribe(() => state.update({ comments: comments.getSnapshot() }))
+  activity.subscribe(() => state.update({ activity: activity.getSnapshot() }))
+  const intents = new Map<string, string>()
   let active = false
   let posting = false
-  let lastTaskRevision: string | undefined
-  async function loadComments(more = false) {
-    if (!client || !userId || !groupId || !taskId || !active) return
-    const previous = state.getSnapshot().comments
-    if (more && (previous.isLoading || !previous.nextCursor)) return
-    const request = ++requests.comments
-    state.update({ comments: { ...previous, isLoading: true, isLoadingMore: more, failedLoadMore: false, error: null } })
-    try {
-      const page = await fetchComments(client, groupId, taskId, more ? previous.nextCursor! : undefined)
-      if (active && request === requests.comments) state.update((current) => ({ ...current,
-        comments: {
-          items: mergeRows(more ? current.comments.items : [...confirmedComments.values()], page.items),
-          nextCursor: page.nextCursor, isLoading: false, isLoadingMore: false, failedLoadMore: false, error: null,
-        },
-      }))
-    } catch (error) {
-      if (active && serviceError(error).code === '42501') onAccessError?.()
-      if (active && request === requests.comments) state.update((current) => ({ ...current,
-        comments: { ...current.comments, isLoading: false, isLoadingMore: false, failedLoadMore: more, error: serviceError(error).message },
-      }))
-    }
-  }
-  async function loadActivity(more = false) {
-    if (!client || !userId || !groupId || !taskId || !active) return
-    const previous = state.getSnapshot().activity
-    if (more && (previous.isLoading || !previous.nextCursor)) return
-    const request = ++requests.activity
-    state.update({ activity: { ...previous, isLoading: true, isLoadingMore: more, failedLoadMore: false, error: null } })
-    try {
-      const page = await fetchActivity(client, groupId, taskId, more ? previous.nextCursor! : undefined)
-      if (active && request === requests.activity) state.update((current) => ({ ...current,
-        activity: { items: mergeRows(more ? current.activity.items : [], page.items), nextCursor: page.nextCursor, isLoading: false, isLoadingMore: false, failedLoadMore: false, error: null },
-      }))
-    } catch (error) {
-      if (active && serviceError(error).code === '42501') onAccessError?.()
-      if (active && request === requests.activity) state.update((current) => ({ ...current,
-        activity: { ...current.activity, isLoading: false, isLoadingMore: false, failedLoadMore: more, error: serviceError(error).message },
-      }))
-    }
-  }
+  let lastRevision: string | undefined
   async function postComment() {
     if (!active || !client || !userId || !groupId || !taskId) throw new Error('Open a task in an accessible group first.')
     if (posting) return
@@ -77,38 +28,35 @@ export function createDetailStore(client: AppClient | null, userId: string | und
     let body: string
     try { body = normalizeCommentBody(draft) }
     catch (error) { state.update({ commentSaveError: serviceError(error).message }); throw error }
-    const id = commentIntents.get(body) ?? crypto.randomUUID()
-    commentIntents.set(body, id)
+    const id = intents.get(body) ?? crypto.randomUUID()
+    intents.set(body, id)
     posting = true
     state.update({ isPosting: true, commentSaveError: null })
     try {
       const saved = await createComment(client, groupId, taskId, body, id, userId)
       if (!active) return saved
-      commentIntents.delete(body)
-      confirmedComments.set(saved.id, saved)
-      state.update((current) => ({ ...current,
-        commentDraft: current.commentDraft === draft ? '' : current.commentDraft,
-        comments: { ...current.comments, items: mergeRows(current.comments.items, [saved]) },
-      }))
+      intents.delete(body); comments.confirm(saved)
+      state.update((current) => ({ ...current, commentDraft: current.commentDraft === draft ? '' : current.commentDraft }))
       return saved
     } catch (error) {
       if (active && serviceError(error).code === '42501') onAccessError?.()
       if (active) state.update({ commentSaveError: serviceError(error).message })
       throw error
-    } finally { posting = false; state.update({ isPosting: false }) }
+    } finally { posting = false; if (active) state.update({ isPosting: false }) }
   }
   return {
-    ...state, loadComments, loadActivity, postComment,
-    retryComments() { return loadComments(state.getSnapshot().comments.failedLoadMore) },
-    retryActivity() { return loadActivity(state.getSnapshot().activity.failedLoadMore) },
+    ...state, postComment,
+    loadComments: comments.load, loadActivity: activity.load,
+    retryComments: comments.retry, retryActivity: activity.retry,
+    refresh: () => Promise.all([comments.refresh(), activity.refresh()]),
     setCommentDraft(commentDraft: string) { state.update({ commentDraft, commentSaveError: null }) },
-    start() { active = true; void loadComments(); void loadActivity() },
-    stop() { active = false; ++requests.comments; ++requests.activity },
+    start() { active = true; comments.start(); activity.start() },
+    stop() { active = false; comments.stop(); activity.stop() },
     invalidateActivity(revision: string | undefined) {
-      if (revision === lastTaskRevision) return
-      const hadRevision = lastTaskRevision !== undefined
-      lastTaskRevision = revision
-      if (hadRevision) void loadActivity()
+      if (revision === lastRevision) return
+      const previous = lastRevision
+      lastRevision = revision
+      if (previous !== undefined) void activity.load(false, true)
     },
   }
 }

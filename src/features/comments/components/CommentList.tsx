@@ -11,7 +11,7 @@ interface CommentListProps {
 
 function CommentRows({ items, recent = false }: { items: TaskComment[]; recent?: boolean }) {
   if (!items.length) return null
-  return <ol className="comment-list" aria-label={recent ? 'Your recent comments, oldest first' : 'Comments, oldest first'}>
+  return <ol className="comment-list" aria-label={recent ? 'Recent comments, oldest first' : 'Comments, oldest first'}>
     {items.map((comment) => <li key={comment.id}>
       <div className="comment-meta"><strong>{comment.author_name}</strong><Timestamp value={comment.created_at} /></div>
       <p>{comment.body}</p>
@@ -36,7 +36,7 @@ export function CommentList({ comments, onRetry, onLoadMore }: CommentListProps)
     {!isLoading && !error && items.length === 0 && <p className="detail-hint">No comments yet. Start the conversation below.</p>}
     <CommentRows items={older} />
     {nextCursor && <div className="comment-pagination">
-      {recent.length > 0 && <p className="detail-hint">More comments appear before your recent update.</p>}
+      {recent.length > 0 && <p className="detail-hint">More comments appear before these recent updates.</p>}
       {failedLoadMore && readError}
       {isLoadingMore && <p className="detail-hint" role="status">Loading more comments…</p>}
       <button type="button" className="button button-secondary" disabled={isLoading} onClick={onLoadMore}>

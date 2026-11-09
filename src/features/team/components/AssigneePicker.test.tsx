@@ -11,6 +11,15 @@ function PickerExample() {
   return <AssigneePicker members={members} selectedIds={selectedIds} isLoading={false} error={null} onChange={setSelectedIds} onRetry={vi.fn()} />
 }
 describe('Real assignees and group presentation', () => {
+  it('keeps a removable choice when an unsaved selection loses membership before being attached', () => {
+    const change = vi.fn()
+    render(<AssigneePicker members={[]} selectedIds={['removed-user']} isLoading={false} error={null} onChange={change} onRetry={vi.fn()} />)
+    const former = screen.getByLabelText('Account removed-user (Unavailable)')
+    expect(former).toBeChecked()
+    expect(former).toBeEnabled()
+    fireEvent.click(former)
+    expect(change).toHaveBeenCalledWith([])
+  })
   it('keeps selections when searching members and disambiguates display names with usernames', () => {
     render(<PickerExample />)
     fireEvent.change(screen.getByLabelText('Search assignees'), { target: { value: 'Member 9' } })

@@ -14,6 +14,12 @@ export async function fetchComments(client: AppClient, groupId: string, taskId: 
   if (error) throw serviceError(error)
   return timelinePage(data ?? [])
 }
+export async function fetchRecentComments(client: AppClient, groupId: string, taskId: string) {
+  const { data, error } = await client.from('comments').select('*').eq('group_id', groupId).eq('task_id', taskId)
+    .order('created_at', { ascending: false }).order('id', { ascending: false }).limit(TIMELINE_PAGE_SIZE)
+  if (error) throw serviceError(error)
+  return (data ?? []).reverse()
+}
 export async function createComment(client: AppClient, groupId: string, taskId: string, body: string, id: string = crypto.randomUUID(), authorId?: string) {
   const text = normalizeCommentBody(body)
   const { data, error } = await client.rpc('post_comment', { p_group_id: groupId, p_task_id: taskId, p_body: text, p_comment_id: id })

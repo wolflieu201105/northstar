@@ -10,7 +10,12 @@ interface Props { client: AppClient; userId: string; group: Group; registerGuard
 export function GroupSettings({ client, userId, group, registerGuard, onChanged, onMembers }: Props) {
   const [name, setName] = useState(group.name)
   const [savedName, setSavedName] = useState(group.name)
+  const [observedName, setObservedName] = useState(group.name)
   const action = useAction()
+  if (group.name !== observedName) {
+    setObservedName(group.name)
+    if (name === savedName && !action.busy) { setName(group.name); setSavedName(group.name) }
+  }
   const owner = group.owner_user_id === userId
   useDraftProtection(name !== savedName, action.busy, registerGuard)
   return <section className="group-panel"><h2>Manage {group.name}</h2>

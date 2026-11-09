@@ -4,6 +4,12 @@ import type { TimelineCursor } from '../../../shared/types/timeline'
 import { cursorFilter, timelinePage, TIMELINE_PAGE_SIZE } from '../../../shared/services/timeline'
 import { serviceError } from '../../../shared/services/errors'
 
+export async function fetchRecentActivity(client: AppClient, groupId: string, taskId: string) {
+  const { data, error } = await client.from('task_activity').select('*').eq('group_id', groupId).eq('task_id', taskId)
+    .order('created_at', { ascending: false }).order('id', { ascending: false }).limit(TIMELINE_PAGE_SIZE)
+  if (error) throw serviceError(error)
+  return (data ?? []).reverse().map(parseActivity)
+}
 export async function fetchActivity(client: AppClient, groupId: string, taskId: string, cursor?: TimelineCursor) {
   let query = client.from('task_activity').select('*').eq('group_id', groupId).eq('task_id', taskId)
     .order('created_at').order('id').limit(TIMELINE_PAGE_SIZE + 1)

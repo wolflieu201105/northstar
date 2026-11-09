@@ -4,20 +4,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fetchTasks, updateTask } from '../features/tasks/services/tasks'
 import { fetchGroups, fetchMembers } from '../features/groups/services/groups'
 import { fetchLabels } from '../features/labels/services/labels'
-import { fetchComments } from '../features/comments/services/comments'
-import { fetchActivity } from '../features/activity/services/activity'
-import { makeLabel, makeMember, makeMembership, makeGroup, makeProfile, makeTask } from '../test/fixtures'
+import { fetchComments, fetchRecentComments } from '../features/comments/services/comments'
+import { fetchActivity, fetchRecentActivity } from '../features/activity/services/activity'
+import { makeActivity, makeComment, makeLabel, makeMember, makeMembership, makeGroup, makeProfile, makeTask } from '../test/fixtures'
 import { fetchProfile } from '../features/account/services/profiles'
+import { realtimeFake } from '../test/realtime'
 import App from './App'
 vi.mock('../features/account/services/profiles', () => ({ fetchProfile: vi.fn(), saveProfile: vi.fn() }))
 
-vi.mock('../shared/lib/supabase', () => ({ supabase: {}, supabaseConfigError: null }))
+vi.mock('../shared/lib/supabase', async () => ({ supabase: (await import('../test/realtime')).realtimeFake.client, supabaseConfigError: null }))
 vi.mock('../features/auth/useAuthSession', () => ({ useAuthSession: () => ({ session: { user: { id: 'user-1' } }, isLoading: false, error: null, retry: vi.fn() }) }))
 vi.mock('../features/tasks/services/tasks', () => ({ fetchTasks: vi.fn(), fetchTask: vi.fn(), createTask: vi.fn(), updateTask: vi.fn(), updateTaskStatus: vi.fn(), deleteTask: vi.fn() }))
 vi.mock('../features/groups/services/groups', () => ({ fetchGroups: vi.fn(), fetchMembers: vi.fn() }))
 vi.mock('../features/labels/services/labels', async (original) => ({ ...await original<typeof import('../features/labels/services/labels')>(), fetchLabels: vi.fn(), createLabel: vi.fn(), updateLabel: vi.fn(), archiveLabel: vi.fn() }))
-vi.mock('../features/comments/services/comments', () => ({ fetchComments: vi.fn(), createComment: vi.fn() }))
-vi.mock('../features/activity/services/activity', () => ({ fetchActivity: vi.fn() }))
+vi.mock('../features/comments/services/comments', () => ({ fetchComments: vi.fn(), fetchRecentComments: vi.fn().mockResolvedValue([]), createComment: vi.fn() }))
+vi.mock('../features/activity/services/activity', () => ({ fetchActivity: vi.fn(), fetchRecentActivity: vi.fn().mockResolvedValue([]) }))
 vi.mock('@dnd-kit/react', () => ({
   DragDropProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
   useDraggable: () => ({ ref: vi.fn(), handleRef: vi.fn(), isDragging: false }),
@@ -26,6 +27,9 @@ vi.mock('@dnd-kit/react', () => ({
 
 beforeEach(() => {
   vi.resetAllMocks()
+  realtimeFake.clear()
+  vi.mocked(fetchRecentComments).mockResolvedValue([])
+  vi.mocked(fetchRecentActivity).mockResolvedValue([])
   window.history.replaceState(null, '', '/?group=group-1')
   vi.mocked(fetchGroups).mockResolvedValue([makeGroup()])
   vi.mocked(fetchProfile).mockResolvedValue(makeProfile())
@@ -38,6 +42,53 @@ beforeEach(() => {
 })
 
 describe('workspace composition', () => {
+  it('shows remote comments and activity while preserving dirty fields and comment drafts', async () => {
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Prepare launch brief' }))
+    fireEvent.change(await screen.findByLabelText('Task title'), { target: { value: 'My unsaved edit' } })
+    fireEvent.change(screen.getByLabelText('Write a comment'), { target: { value: 'My unsent comment' } })
+    vi.mocked(fetchTasks).mockResolvedValue([makeTask({ title: 'Changed by Sam', updated_at: '2026-11-09T14:00:00.123456Z' })])
+    vi.mocked(fetchRecentComments).mockResolvedValue([makeComment({ author_user_id: 'user-2', author_name: 'Sam', body: 'Remote conversation update' })])
+    vi.mocked(fetchRecentActivity).mockResolvedValue([makeActivity({ actor_user_id: 'user-2', actor_name: 'Sam' })])
+    act(() => { realtimeFake.emit('northstar:group:group-1','board'); realtimeFake.emit('northstar:group:group-1','discussion') })
+    await screen.findByText('Remote conversation update')
+    expect(screen.getByLabelText('Task title')).toHaveValue('My unsaved edit')
+    expect(screen.getByLabelText('Write a comment')).toHaveValue('My unsent comment')
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled()
+    const confirm = vi.spyOn(window,'confirm').mockReturnValue(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Use latest saved task' }))
+    expect(screen.getByLabelText('Task title')).toHaveValue('Changed by Sam')
+    expect(screen.getByLabelText('Write a comment')).toHaveValue('My unsent comment')
+    fireEvent.click(screen.getByRole('tab', { name: 'Activity' }))
+    expect(within(screen.getByRole('region', { name: 'Task activity' })).getByText('Sam')).toBeVisible()
+    confirm.mockRestore()
+  })
+
+  it('clears inaccessible content on the independent account signal without a focus event', async () => {
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Prepare launch brief' }))
+    fireEvent.change(await screen.findByLabelText('Task title'), { target: { value: 'Draft before removal' } })
+    vi.mocked(fetchGroups).mockResolvedValue([])
+    const confirm = vi.spyOn(window,'confirm').mockReturnValue(false)
+    act(() => { realtimeFake.emit('northstar:account:user-1','directory') })
+    await screen.findByRole('heading', { name: 'Choose a group to start' })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Prepare launch brief' })).not.toBeInTheDocument()
+    expect(confirm).not.toHaveBeenCalled()
+    confirm.mockRestore()
+  })
+
+  it('catches up tasks and counts after a missed event and successful resubscription', async () => {
+    render(<App />)
+    await screen.findByRole('button', { name: 'Prepare launch brief' })
+    act(() => { realtimeFake.status('northstar:account:user-1','CHANNEL_ERROR') })
+    expect(screen.getByLabelText('Live connection')).toHaveTextContent('Live updates paused')
+    vi.mocked(fetchTasks).mockResolvedValue([makeTask(), makeTask({ id: 'task-2', title: 'Created while disconnected', status: 'done' })])
+    act(() => { realtimeFake.status('northstar:account:user-1','SUBSCRIBED'); realtimeFake.status('northstar:group:group-1','SUBSCRIBED') })
+    await screen.findByRole('button', { name: 'Created while disconnected' })
+    expect(screen.getByLabelText('Live connection')).toHaveTextContent('Live updates')
+    expect(screen.getByRole('group', { name: 'Whole-board summary' })).toHaveTextContent('2 Total')
+  })
   it('isolates two groups, guards dirty details, and restores each group’s filters', async () => {
     vi.mocked(fetchGroups).mockResolvedValue([makeGroup(), makeGroup({ id: 'group-2', name: 'Design' })])
     vi.mocked(fetchTasks).mockImplementation(async (_client, groupId) => [makeTask({ id: groupId + '-task', group_id: groupId, title: groupId === 'group-1' ? 'Launch brief' : 'Design review' })])

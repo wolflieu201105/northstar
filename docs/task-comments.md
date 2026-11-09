@@ -2,6 +2,8 @@
 
 The comment flow introduced in Phase 8 now uses the Phase 13 group backend and real accounts. Phases 14–16 scope reads/writes to the selected group and actual task, with server-authored name snapshots. No additional SQL is needed for this frontend batch.
 
+Phase 17 adds live recent-page merging, gap pagination, and background recovery without erasing drafts. See [Realtime setup](realtime.md).
+
 ## Implemented
 
 - A separate comment list and composer keep discussion independent of task-field saves. Comments load only for an opened task in an accessible group.

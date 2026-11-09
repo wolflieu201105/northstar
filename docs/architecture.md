@@ -18,6 +18,7 @@ The maintenance checkpoint after Phase 8 reorganizes the existing application by
 | `src/features/comments/`, `src/features/activity/` | Discussion UI, persistence, formatting, and validation for each feature. |
 | `src/features/workspace/` | Shared member/label lookup state used across the workspace. |
 | `src/features/auth/` | Native Auth subscriptions, callback handling, guest conversion, and recovery. |
+| `src/features/live/` | Private channel lifecycle, scoped/coalesced refresh scheduling, recovery hooks, and connection status. |
 | `src/shared/` | Reusable UI/hooks, generic state/data helpers, common contracts, and the Supabase client. |
 | `src/test/` | Test environment setup and shared fixtures. |
 
@@ -59,6 +60,8 @@ These files retain the existing global class names. Keep the entry-point import 
 The refactor compared the expanded CSS syntax trees before and after splitting. All 324 original top-level rules/at-rules have identical selectors, declaration values/order, importance flags, keyframes, and media-query ordering. Only file boundaries and formatting changed.
 
 ## Development and review
+
+Phase 17 adds `shared/state/timelineResource.ts` for paginated/live append-only history and `styles/live/` for connection feedback. See the [live update contract](realtime.md).
 
 Edit files under `src/`. `npm run build` regenerates `dist/` with optimized, hashed assets; generated asset filenames change between builds.
 

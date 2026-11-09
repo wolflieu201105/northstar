@@ -2,6 +2,8 @@
 
 The Activity view introduced in Phase 9 now reads the Phase 13 group history with version 2 payloads and saved real actor/assignee names. No additional SQL is needed for the Phases 14–16 frontend integration.
 
+Phase 17 adds live recent-history merging, visible gaps, and reconnect recovery while retaining exact cursors and saved actor names. See [Realtime setup](realtime.md).
+
 ## Implemented
 
 - Typed formatters display task creation, status transitions, field edits, assignment changes, and label changes. Creation includes the saved initial title/status; edits offer View changes with the recorded old/new values.

@@ -1,0 +1,5 @@
+.sync-status { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 9px max(20px, 3vw); min-height: 34px; color: var(--muted-strong); font-size: 12px; background: var(--surface-soft); border-bottom: 1px solid var(--line); }
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.sync-live .sync-dot { background: var(--accent); }
+.sync-paused .sync-dot, .sync-offline .sync-dot { background: var(--amber); }
+@media (max-width: 600px) { .sync-status { justify-content: flex-start; font-size: 11px; } }

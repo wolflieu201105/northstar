@@ -6,7 +6,7 @@ Keep [path.md](path.md) as the original build plan and [README.md](README.md) as
 
 **November 9 fresh-start correction:** The user approved discarding existing application data. Phase 12 therefore supplies a clean group schema and a destructive reset, without importing old tasks or placeholder members. Guest registration must still preserve work created afterward. No hosted reset has been performed.
 
-**November 9 scope update:** The user confirmed email/password accounts, unique usernames for inviting registered users or guests, and shared editing/invitations for all active group members. See the [accepted collaboration design](docs/shared-groups-design.md). Phases 11–16 now provide the design, user-verified group backend, and account/group/frontend implementation. Phase 17 Realtime is next; native email and multi-browser acceptance checks remain open. The previous final verification/release phases move from 11/12 to 18/19. [update_path.md](update_path.md) links here as the current update-path entry point.
+**November 9 scope update:** The user confirmed email/password accounts, unique usernames for inviting registered users or guests, and shared editing/invitations for all active group members. See the [accepted collaboration design](docs/shared-groups-design.md). Phases 11–16 now provide the design, user-verified group backend, and account/group/frontend implementation. Phase 17 private live updates/recovery is implemented locally; its additive SQL and actual two-browser review are the current checkpoint. Native email and multi-user acceptance remain part of the final review. The previous final verification/release phases move from 11/12 to 18/19. [update_path.md](update_path.md) links here as the current update-path entry point.
 
 ## 1. High-level roadmap
 
@@ -613,17 +613,19 @@ Deliverable: [Group-scoped workspace contract and review](docs/accounts-and-grou
 
 ### Phase 17 — Synchronize shared work
 
-Owner: ___ | Status: Not started | Next action: Add authorized Realtime subscriptions and reconnect/access-loss recovery.
+Owner: Codex | Status: Implemented locally — SQL and live-browser review pending | Next action: Apply the additive Phase 17 migration, run its read-only verifier, and review two live browsers before Phase 18.
+
+Deliverables: [Realtime SQL/setup and review](docs/realtime.md), [additive migration](supabase/migrations/20261109141005_add_private_workspace_realtime.sql), and [read-only verifier](supabase/verify-phase17.sql). Private content-free Broadcast signals drive scoped/coalesced background reads, draft-safe history merging, independent access-loss hints, reconnect/focus/30-second recovery, and narrow-screen connection feedback. On November 9, 2026, 179 tests across 34 files, lint, and the production build passed. PostgreSQL 17 passed 32 Realtime checks on each fresh/upgrade path plus the existing 76 checks per path, 39 foundation checks, three concurrency races, reapplication, and catalog/reset parity. Local advisors reported no warnings/errors. No hosted migration/data/Auth/Realtime settings were changed; actual WebSocket delivery, two-browser timing, and visual/touch behavior remain manual.
 
 #### 17.1 Reflect committed changes across users
 
-- [ ] Verify current Supabase Realtime APIs, RLS behavior, publication setup, and deletion limitations before choosing channel/filter contracts.
-- [ ] Subscribe only to authorized group/task and identity-specific invitation/membership changes; do not publish unrestricted group contents.
-- [ ] Refetch authoritative rows after changes and update cards, assignments, labels, comments, activity, counts, and inbox state without duplicate records/events.
-- [ ] Keep active drafts during remote edits, preserve exact update tokens, and surface conflicts rather than silently overwriting newer work.
-- [ ] Tear down channels on group/account changes and recover after reconnect or a missed event; retain retry and manual refresh paths.
-- [ ] Revalidate membership on focus/reconnect, periodically while open, and on authorization failures; do not rely on receiving a removal event after SELECT access is revoked.
-- [ ] Clear inaccessible group caches/details and redirect to a safe group/no-groups state after leave/removal/deletion, while RLS independently rejects reads/writes.
+- [x] Verify current Supabase Realtime APIs, RLS behavior, publication setup, and deletion limitations before choosing channel/filter contracts. The hosted ownership correction replaces redundant managed-table ALTER with a catalog check; 32 local Realtime checks now include an ownership guard.
+- [x] Subscribe only to authorized group/task and identity-specific invitation/membership changes; do not publish unrestricted group contents.
+- [x] Refetch authoritative rows after changes and update cards, assignments, labels, comments, activity, counts, and inbox state without duplicate records/events.
+- [x] Keep active drafts during remote edits, preserve exact update tokens, and surface conflicts rather than silently overwriting newer work.
+- [x] Tear down channels on group/account changes and recover after reconnect or a missed event; retain retry and manual refresh paths.
+- [x] Revalidate membership on focus/reconnect, periodically while open, and on authorization failures; do not rely on receiving a removal event after SELECT access is revoked.
+- [x] Clear inaccessible group caches/details and redirect to a safe group/no-groups state after leave/removal/deletion, while RLS independently rejects reads/writes.
 - [ ] Test two live browser clients, reconnect, invitation acceptance, concurrent edits, member removal with an open detail, cleanup, and narrow-screen feedback.
 
 **Done when:** Members see each other's committed changes, conflicts remain explicit, and losing group access reliably removes the active view without depending on UI authorization.

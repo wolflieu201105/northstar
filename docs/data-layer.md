@@ -6,7 +6,7 @@ The current frontend targets the installed shared-group backend. Generated [data
 
 App restores/subscribes to Supabase Auth before mounting workspace state. The workspace root is keyed by Auth UUID; same-UUID guest conversion keeps that root and its work. Identity/profile/group directory state is keyed by client and UUID. Task/lookup stores additionally use group ID; detail stores additionally use task ID. Stopped reads, old pages, and old scopes do not populate the active view.
 
-The selected group comes from joined groups and `group=<UUID>` in the URL. Unknown/inaccessible direct links never start board/detail requests. First entry without a group selects the initial joined group. Confirmed membership loss unmounts inaccessible data and clears overlays, while failed revalidation keeps drafts. Focus/manual refresh and denied mutations revalidate the group directory; automatic synchronization follows in Phase 17.
+The selected group comes from joined groups and `group=<UUID>` in the URL. Unknown/inaccessible direct links never start board/detail requests. First entry without a group selects the initial joined group. Confirmed membership loss unmounts inaccessible data and clears overlays, while failed revalidation keeps drafts. Focus/manual refresh and denied mutations revalidate the group directory; Phase 17 provides private live updates with periodic/reconnect recovery.
 
 ## Services
 
@@ -37,6 +37,12 @@ Comments/activity use full-precision timestamp and UUID keyset cursors, 50-row p
 The `team` feature contains read-only real-account avatars/pickers. Group membership supplies active assignee choices. Profile updates refresh current lookups, updating card/filter display without rewriting historic comment/actor/assignment snapshots. Labels retain archive/restore semantics and existing links.
 
 Board filtering and summary values are derived from canonical tasks in the active group. Per-group URL filters and in-memory scroll/filter memory survive local switching; switching Auth identity clears that memory. Navigation guards cover dirty task/comment/label/profile drafts and pending operations.
+
+## Live synchronization — Phase 17
+
+The identity-keyed LiveSyncProvider owns private account/group channels and an area-based refresh queue. Feature hooks register stable background refresh functions for their current scope. A 120 ms queue coalesces transactions and serializes each resource; topic cleanup is shared per client so a new account waits for the previous account to release a common group topic. Subscribe/reconnect, visible resume/focus, and 30-second checks reconcile missed notifications.
+
+The shared timeline resource retains an older contiguous page plus a bounded recent suffix, preserves failed cursors, closes gaps as pages overlap, and ignores stale responses. Discussion drafts remain independent of reads. The [Realtime contract](realtime.md) describes SQL, authorization-cache limits, deployment, and review.
 
 ## Verification boundary
 
