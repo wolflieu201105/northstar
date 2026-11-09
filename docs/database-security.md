@@ -14,7 +14,7 @@ Then run [`supabase/verify-phase3.sql`](../supabase/verify-phase3.sql) for a rea
 
 New installations use the full [`supabase/schema.sql`](../supabase/schema.sql), which includes both enhancement checkpoints. Keep the pre-upgrade backup/recovery procedure in [database-upgrade.md](database-upgrade.md).
 
-Phase 3 has been tested on isolated PostgreSQL databases. It has not been applied to the hosted project by the implementation agent. Real Supabase JWT/Data API tests and post-application advisor results remain pending.
+Phase 3 was tested on isolated PostgreSQL databases and subsequently confirmed installed through read-only hosted inspection in Phase 4. `save_task` remains an invoker function, authenticated execution is enabled, and unauthenticated execution is disabled. Types were generated from that installed schema. Refreshed advisors no longer report missing RLS policies or public execution of the privileged event-trigger helper. Two-real-guest JWT/Data API checks remain pending; the agent made no hosted application-data writes.
 
 ## Access contract
 

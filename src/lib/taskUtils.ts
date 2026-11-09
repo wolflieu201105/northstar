@@ -29,7 +29,7 @@ export function formatDueDate(value: string) {
   return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date)
 }
 
-export function filterTasks(tasks: Task[], query: string, priority: TaskPriority | 'all') {
+export function filterTasks<TaskType extends Task>(tasks: TaskType[], query: string, priority: TaskPriority | 'all') {
   const normalizedQuery = query.trim().toLocaleLowerCase()
 
   return tasks.filter((task) => {

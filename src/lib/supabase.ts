@@ -1,4 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '../types/database'
+
+export type AppClient = SupabaseClient<Database>
 
 const url = import.meta.env.VITE_SUPABASE_URL?.trim()
 const publicKey = (
@@ -13,9 +16,9 @@ export const supabaseConfigError =
     ? 'Supabase is not configured. Add a project URL and browser-safe publishable key to .env.local.'
     : null
 
-export const supabase: SupabaseClient | null = supabaseConfigError
+export const supabase: AppClient | null = supabaseConfigError
   ? null
-  : createClient(url!, publicKey!, {
+  : createClient<Database>(url!, publicKey!, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,

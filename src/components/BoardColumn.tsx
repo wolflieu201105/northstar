@@ -1,11 +1,11 @@
 import { Plus } from 'lucide-react'
 import { useDroppable } from '@dnd-kit/react'
-import { STATUS_META, type Task, type TaskStatus } from '../types/task'
+import { STATUS_META, type Task, type TaskStatus, type TaskView } from '../types/task'
 import { TaskCard } from './TaskCard'
 
 interface BoardColumnProps {
   status: TaskStatus
-  tasks: Task[]
+  tasks: TaskView[]
   totalCount: number
   hasFilters: boolean
   movingTaskIds: Set<string>

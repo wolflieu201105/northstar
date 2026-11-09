@@ -16,6 +16,11 @@ The interface uses a restrained black-and-green visual system and supports deskt
 - Private task storage protected by Supabase Row Level Security
 - Four workflow columns: To Do, In Progress, In Review, and Done
 - Create, edit, and delete task flows
+- Board, Team, and Labels navigation with shareable task URLs and preserved search/priority filters
+- Responsive task-detail panel with save-in-place editing and unsaved-draft protection
+- Select existing assignees/labels, post timestamped comments, and inspect persisted activity
+- Create, edit, archive, and restore team profiles with optional avatar colors
+- Assign multiple members during task creation/editing and display member avatars on cards
 - Drag-and-drop status changes with optimistic updates and rollback on failure
 - Keyboard/mobile status selector as an alternative to dragging
 - Descriptions, priority levels, and calendar due dates
@@ -26,6 +31,8 @@ The interface uses a restrained black-and-green visual system and supports deskt
 - Responsive horizontal board navigation on narrow screens
 - Accessible labels, focus states, dialog behavior, and reduced-motion support
 - Lazy-loaded board and task form bundles
+
+The enhancement roadmap is in [path-updates.md](path-updates.md). Phase 6 is ready for review; label management follows in Phase 7. See [the team/assignee checkpoint review](docs/team-members.md#checkpoint-review) for manual checks. This checkpoint requires no additional SQL.
 
 ## Technology
 

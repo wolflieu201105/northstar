@@ -1,14 +1,17 @@
-import { Plus, ShieldCheck, Sparkles } from 'lucide-react'
+import { LayoutDashboard, Plus, ShieldCheck, Sparkles, Tags, Users } from 'lucide-react'
+import type { WorkspaceView } from '../state/navigationStore'
 
 interface AppHeaderProps {
   guestId: string
   onCreateTask: () => void
+  view: WorkspaceView
+  onVisit: (view: WorkspaceView) => void
 }
 
-export function AppHeader({ guestId, onCreateTask }: AppHeaderProps) {
+export function AppHeader({ guestId, view, onVisit, onCreateTask }: AppHeaderProps) {
   return (
     <header className="app-header">
-      <a className="brand" href="#main-content" aria-label="Northstar board home">
+      <a className="brand" href="?" onClick={(event) => { event.preventDefault(); onVisit('board') }} aria-label="Northstar board home">
         <span className="brand-mark" aria-hidden="true">
           <Sparkles size={19} strokeWidth={2.4} />
         </span>
@@ -17,6 +20,13 @@ export function AppHeader({ guestId, onCreateTask }: AppHeaderProps) {
           <small>Project board</small>
         </span>
       </a>
+
+      <nav className="workspace-nav" aria-label="Workspace">
+        {([{ view: 'board', label: 'Board', icon: LayoutDashboard }, { view: 'team', label: 'Team', icon: Users }, { view: 'labels', label: 'Labels', icon: Tags }] as const).map((item) =>
+          <button type="button" key={item.view} aria-current={view === item.view ? 'page' : undefined} onClick={() => onVisit(item.view)}>
+            <item.icon size={16} aria-hidden="true" /><span>{item.label}</span>
+          </button>)}
+      </nav>
 
       <div className="header-actions">
         <div className="guest-pill" title="Tasks are private to this browser's guest session">

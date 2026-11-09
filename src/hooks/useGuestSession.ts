@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { Session, SupabaseClient } from '@supabase/supabase-js'
+import type { Session } from '@supabase/supabase-js'
+import type { AppClient } from '../lib/supabase'
 
 let initializationPromise: Promise<Session> | null = null
 
-async function initializeGuestSession(client: SupabaseClient) {
+async function initializeGuestSession(client: AppClient) {
   const {
     data: { session },
     error: sessionError,
@@ -18,7 +19,7 @@ async function initializeGuestSession(client: SupabaseClient) {
   return data.session
 }
 
-export function useGuestSession(client: SupabaseClient | null) {
+export function useGuestSession(client: AppClient | null) {
   const [session, setSession] = useState<Session | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)

@@ -165,9 +165,9 @@ All guest-owned records use `user_id uuid not null` and server-generated timesta
 
 ### Phase 3 — Secure relationships and record activity
 
-Owner: Codex | Status: Implemented locally — hosted verification pending | Next action: Review/apply the Phase 3 migration, then verify real guest clients and rerun advisors.
+Owner: Codex | Status: Installed — real guest API verification pending | Next action: Retain the two-guest Data API checks in the verification checkpoint.
 
-Deliverables: [Phase 3 migration](supabase/migrations/20261108195255_secure_workspace_mutations.sql), updated [full schema](supabase/schema.sql), [read-only installation checks](supabase/verify-phase3.sql), and [security/RPC guide](docs/database-security.md). Both fresh and upgraded local PostgreSQL databases passed 45 schema checks plus 61 access/mutation checks, with catalog parity and repeat application. Read-only hosted inspection confirmed Phase 2 is installed; Phase 3 remains a local SQL deliverable until applied. Frontend service wiring follows in Phase 4.
+Deliverables: [Phase 3 migration](supabase/migrations/20261108195255_secure_workspace_mutations.sql), updated [full schema](supabase/schema.sql), [read-only installation checks](supabase/verify-phase3.sql), and [security/RPC guide](docs/database-security.md). Both fresh and upgraded local PostgreSQL databases passed 45 schema checks plus 61 access/mutation checks, with catalog parity and repeat application. Read-only hosted inspection in Phase 4 confirmed the installed RPC and its expected execution permissions; hosted advisors were refreshed. Frontend services are connected in Phase 4. Two-real-guest Data API checks remain pending.
 
 #### 3.1 Add explicit Data API grants and RLS
 
@@ -197,7 +197,7 @@ Deliverables: [Phase 3 migration](supabase/migrations/20261108195255_secure_work
 - [x] Reject the entire save if any field, member, label, relationship, or event write fails.
 - [x] Reject stale edits using the exact server-returned `updated_at` token; frontend draft retention and reconciliation follow in Phase 4.
 - [x] Ensure assignment/tag-only updates also touch the parent timestamp without generating a fictitious field-edit event.
-- [ ] Route frontend create/edit/assignment/tag saves through this RPC in Phase 4. Existing direct status writes already record history.
+- [x] Route create/edit/status and relation-set saves through the typed RPC service in Phase 4; new assignment/tag controls follow in the UI phases.
 - [x] Use task-first row locks and locked member/label active-state checks; parallel HTTP integration testing remains in Phase 11.
 
 #### 3.3 Capture history at the database layer
@@ -212,13 +212,15 @@ Deliverables: [Phase 3 migration](supabase/migrations/20261108195255_secure_work
 - [x] Define cascade cleanup behavior explicitly: task/auth-user deletion must not fail because a child trigger tries to append history to a disappearing task.
 - [x] Record only meaningful differences; no-op saves and timestamp-only updates must not duplicate events.
 - [x] Snapshot member/label names and old/new values in event payloads so later renaming or archival does not rewrite history.
-- [ ] Run Supabase security/performance advisors and review privileged functions before accepting this checkpoint.
+- [x] Recheck hosted security/performance advisors after installation and review privileged functions. Missing-policy and public privileged-helper execution findings are resolved; intentional guest access and unused-index notices are documented.
 
 **Done when:** Guest clients can perform their allowed operations, cross-owner references are rejected, task saves are atomic, and history cannot be forged, edited, or deleted directly by guests.
 
 ### Phase 4 — Extend types, services, and state
 
-Owner: ___ | Status: Not started | Next action: Define the new service contracts and mutation state.
+Owner: Codex | Status: Complete | Next action: Phase 5 navigation and task details are ready for review.
+
+Deliverable: [Typed data-layer guide](docs/data-layer.md). Generated database types, typed services, task/workspace/detail stores and hooks, stable request IDs, pagination, and RPC integration are implemented. The existing board uses canonical task IDs and full-precision edit tokens. Lint and the production build pass; 29 tests pass across 7 files. New feature screens and navigation remain in their later phases; no SQL changes are required here.
 
 #### 4.1 Extend the current project structure
 
@@ -246,66 +248,70 @@ Create files when needed, keeping the existing component/service/hook separation
 
 #### 4.2 Load and mutate data consistently
 
-- [ ] Load tasks, members, labels, and task relationships after guest auth; parallelize independent requests.
-- [ ] Use nested relational queries or bounded batch queries; avoid one assignee/label request per task card.
-- [ ] Fetch comments and activity only for the opened task, with independent loading/error states.
-- [ ] Key detail data by guest ID and task ID; ignore responses from a closed panel or previously selected task.
-- [ ] Keep a single canonical board task state. The detail view should resolve its selected task by ID rather than retain a stale task snapshot.
-- [ ] Preserve form/comment drafts on failure and guard duplicate submissions.
-- [ ] Serialize or block overlapping mutations on the same task, including a drag while a detail save is pending.
-- [ ] Update board, detail, lookup records, filters, and summary state from committed server results.
-- [ ] Do not synthesize authoritative activity in the browser; invalidate/refetch the affected timeline after successful changes.
-- [ ] For ambiguous network outcomes, reconcile with the server before retrying creation or appending comments; use stable request IDs where needed to avoid duplicates.
+- [x] Load tasks, members, labels, and task relationships after guest auth; parallelize independent requests.
+- [x] Use nested relational queries or bounded batch queries; avoid one assignee/label request per task card.
+- [x] Fetch comments and activity only for the opened task, with independent loading/error states.
+- [x] Key detail data by guest ID and task ID; ignore responses from a closed panel or previously selected task.
+- [x] Keep a single canonical board task state. The existing selected task resolves by ID; the expanded detail view follows in Phase 5.
+- [x] Retain existing form drafts and provide comment-draft state on failure; guard duplicate submissions. The detail UI consumes these contracts in Phase 5.
+- [x] Serialize or block overlapping mutations on the same task, including a drag while a detail save is pending.
+- [x] Update board, detail, lookup records, filters, and summary state from committed server results.
+- [x] Do not synthesize authoritative activity in the browser; invalidate/refetch the affected timeline after successful changes.
+- [x] For ambiguous network outcomes, reconcile with the server before retrying creation or appending comments; use stable request IDs where needed to avoid duplicates.
 
 **Done when:** Typed services and state can load and save the full task model, handle rollback/conflicts, and keep the board and selected task synchronized.
 
 ### Phase 5 — Add workspace navigation and task details
 
-Owner: ___ | Status: Not started | Next action: Build the shared navigation and responsive detail shell.
+Owner: Codex | Status: Complete | Next action: Phase 6 team management is ready for review.
+
+Deliverable: [Navigation and task-detail guide](docs/navigation-and-task-details.md). URL navigation, read-only Team/Labels directories, shared task fields, multiple-selection controls, comment/activity tabs, and draft protection are implemented. Full management forms remain in Phases 6–7; comments/activity receive their dedicated follow-up checks in Phases 8–9. No new SQL is required. Browser appearance, native focus containment, dragging, and live persistence remain manual checkpoint checks.
 
 #### 5.1 Add management views
 
-- [ ] Add Board, Team, and Labels navigation inside the existing app shell.
-- [ ] Parse supported query parameters, handle unknown views gracefully, and subscribe to browser navigation.
-- [ ] Keep the guest session and loaded workspace data alive between management views.
-- [ ] Restore active board filters after returning from Team or Labels.
-- [ ] Use the existing black–green tokens for navigation, panels, buttons, and focus states.
+- [x] Add Board, Team, and Labels navigation inside the existing app shell.
+- [x] Parse supported query parameters, handle unknown views gracefully, and subscribe to browser navigation.
+- [x] Keep the guest session and loaded workspace data alive between management views.
+- [x] Restore active board filters after returning from Team or Labels.
+- [x] Use the existing black–green tokens for navigation, panels, buttons, and focus states.
 
 #### 5.2 Build the detail panel
 
-- [ ] Open task details through a card title/action without interfering with the separate drag handle.
-- [ ] Show title, description, status, priority, due date, assignee picker, label picker, and delete action.
-- [ ] Reuse existing task form fields and validation, while avoiding nested forms or nested modal dialogs.
-- [ ] Provide Comments and Activity tabs with clear loading, empty, and error states.
-- [ ] Support direct task links and an inaccessible/deleted-task message without revealing another guest's data.
-- [ ] Trap focus where appropriate, support Escape and an accessible close control, and return focus to the opener when available.
-- [ ] Preserve unsaved drafts and confirm intentional discard on close/navigation.
-- [ ] Close the panel after successful task deletion and remove related client state.
-- [ ] Lazy-load detail/management surfaces and keep mobile controls and scrolling usable.
+- [x] Open task details through a card title/action without interfering with the separate drag handle.
+- [x] Show title, description, status, priority, due date, assignee picker, label picker, and delete action.
+- [x] Reuse existing task form fields and validation, while avoiding nested forms or nested modal dialogs.
+- [x] Provide Comments and Activity tabs with clear loading, empty, and error states.
+- [x] Support direct task links and an inaccessible/deleted-task message without revealing another guest's data.
+- [x] Trap focus where appropriate, support Escape and an accessible close control, and return focus to the opener when available.
+- [x] Preserve unsaved drafts and confirm intentional discard on close/navigation.
+- [x] Close the panel after successful task deletion and remove related client state.
+- [x] Lazy-load detail/management surfaces and keep mobile controls and scrolling usable.
 
 **Done when:** Navigation and the detail panel work with refresh, Back/Forward, keyboard input, and narrow screens, with no regression to task creation or drag/drop.
 
 ### Phase 6 — Build team members and multiple assignees
 
-Owner: ___ | Status: Not started | Next action: Connect member management and the assignee picker.
+Owner: Codex | Status: Implemented — ready for checkpoint review | Next action: Review members, avatars, assignment persistence, and history before Phase 7 label management.
+
+Deliverable: [Team member and assignee guide](docs/team-members.md). Inline create/edit forms, archive/restore views, assignment counts, board/card avatars, and searchable multi-assignment on creation/edit are implemented. Existing task links survive archival. Hosted constraints and table access were checked read-only; no new SQL or hosted data writes were needed. Live refresh/history and browser interaction checks remain below for this checkpoint.
 
 #### 6.1 Manage the guest's team
 
-- [ ] Build member creation with a visible name label and optional palette color selection.
-- [ ] Reject blank or oversized names in both UI and database.
-- [ ] Show member initials, name, color, active/archived status, and edit/archive/restore controls.
-- [ ] Display active member avatars in the board header, with overflow such as `+3` and a Manage team entry point.
-- [ ] Show a useful empty-team state and preserve entered values after a failed save.
-- [ ] Make clear that these are workspace profiles, not invitations or newly authenticated accounts.
+- [x] Build member creation with a visible name label and optional palette color selection.
+- [x] Reject blank or oversized names in both UI and database.
+- [x] Show member initials, name, color, active/archived status, and edit/archive/restore controls.
+- [x] Display active member avatars in the board header, with overflow such as `+3` and a Manage team entry point.
+- [x] Show a useful empty-team state and preserve entered values after a failed save.
+- [x] Make clear that these are workspace profiles, not invitations or newly authenticated accounts.
 
 #### 6.2 Assign several members to tasks
 
-- [ ] Use a checkbox-based multi-select with a search field when the list is long.
-- [ ] Allow zero, one, or multiple assignees on creation and edit; zero means Unassigned.
-- [ ] Save assignment changes through the atomic task mutation from Phase 3.
-- [ ] Display a small avatar stack on cards; expose full assignee names through accessible text and an overflow indicator.
-- [ ] Keep archived assignees visible with an archived marker until removed; prevent adding archived members.
-- [ ] Propagate member renames/colors to cards and pickers without changing historical event snapshots.
+- [x] Use a checkbox-based multi-select with a search field when the list is long.
+- [x] Allow zero, one, or multiple assignees on creation and edit; zero means Unassigned.
+- [x] Save assignment changes through the atomic task mutation from Phase 3.
+- [x] Display a small avatar stack on cards; expose full assignee names through accessible text and an overflow indicator.
+- [x] Keep archived assignees visible with an archived marker until removed; prevent adding archived members.
+- [x] Propagate member renames/colors to cards and pickers without changing historical event snapshots.
 - [ ] Verify assignment additions/removals produce the expected activity and survive refresh.
 
 **Done when:** A guest can manage members and persist several assignees per task, with consistent avatars on the board and accurate assignment history.

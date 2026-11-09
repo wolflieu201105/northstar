@@ -1,10 +1,11 @@
 import { CalendarDays, GripVertical, Pencil } from 'lucide-react'
 import { useDraggable } from '@dnd-kit/react'
 import { formatDueDate, getDueState } from '../lib/taskUtils'
-import type { Task } from '../types/task'
+import type { Task, TaskView } from '../types/task'
+import { MemberAvatarStack } from './MemberAvatar'
 
 interface TaskCardProps {
-  task: Task
+  task: TaskView
   isMoving: boolean
   onEdit: (task: Task) => void
 }
@@ -41,7 +42,7 @@ export function TaskCard({ task, isMoving, onEdit }: TaskCardProps) {
             className="icon-button card-edit"
             type="button"
             onClick={() => onEdit(task)}
-            aria-label={`Edit ${task.title}`}
+            aria-label={`Open details for ${task.title}`}
           >
             <Pencil size={15} />
           </button>
@@ -57,7 +58,7 @@ export function TaskCard({ task, isMoving, onEdit }: TaskCardProps) {
         </div>
       </div>
 
-      <h3>{task.title}</h3>
+      <h3><button className="task-title-button" type="button" onClick={() => onEdit(task)}>{task.title}</button></h3>
       {task.description && <p className="task-description">{task.description}</p>}
 
       <div className="task-card-footer">
@@ -72,6 +73,12 @@ export function TaskCard({ task, isMoving, onEdit }: TaskCardProps) {
           <span className="no-due-date">No due date</span>
         )}
         {isMoving && <span className="saving-label">Saving…</span>}
+      </div>
+      <div className="task-assignees">
+        {task.assignees.length > 0 ? <>
+          <MemberAvatarStack members={task.assignees} />
+          {task.assignees.some((member) => member.archived_at) && <span className="archived-assignee-note">Includes archived</span>}
+        </> : <span className="unassigned-label">Unassigned</span>}
       </div>
     </article>
   )

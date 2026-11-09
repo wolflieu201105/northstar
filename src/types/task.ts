@@ -1,3 +1,6 @@
+import type { Label } from './label'
+import type { TeamMember } from './team'
+
 export const TASK_STATUSES = ['todo', 'in_progress', 'in_review', 'done'] as const
 export const TASK_PRIORITIES = ['low', 'normal', 'high'] as const
 
@@ -24,7 +27,19 @@ export interface TaskDraft {
   due_date: string
 }
 
-export interface TaskInsert {
+export interface TaskView extends Task {
+  assignees: TeamMember[]
+  labels: Label[]
+}
+
+export interface TaskRelationsInput {
+  assigneeIds?: string[]
+  labelIds?: string[]
+}
+
+export type TaskChanges = Partial<TaskInsert> & TaskRelationsInput
+
+export interface TaskInsert extends TaskRelationsInput {
   title: string
   description: string | null
   status: TaskStatus

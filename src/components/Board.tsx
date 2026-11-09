@@ -1,11 +1,11 @@
 import { DragDropProvider } from '@dnd-kit/react'
-import type { Task, TaskStatus } from '../types/task'
+import type { Task, TaskStatus, TaskView } from '../types/task'
 import { TASK_STATUSES } from '../types/task'
 import { BoardColumn } from './BoardColumn'
 
 interface BoardProps {
-  tasks: Task[]
-  allTasks: Task[]
+  tasks: TaskView[]
+  allTasks: TaskView[]
   hasFilters: boolean
   movingTaskIds: Set<string>
   onCreate: (status: TaskStatus) => void
