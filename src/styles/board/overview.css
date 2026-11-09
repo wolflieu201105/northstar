@@ -1,0 +1,98 @@
+.board-intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  margin-bottom: 34px;
+}
+
+.board-intro h1 {
+  max-width: 680px;
+  margin-bottom: 11px;
+  font-size: clamp(30px, 4vw, 47px);
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+}
+
+.board-intro > div:first-child > p {
+  max-width: 660px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 8px;
+}
+
+.summary-card {
+  gap: 8px;
+  min-height: 47px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  color: var(--muted-strong);
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.summary-card strong {
+  margin-right: 3px;
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.summary-total svg {
+  color: var(--accent);
+}
+
+.summary-done svg {
+  color: var(--green);
+}
+
+.summary-overdue svg {
+  color: var(--coral);
+}
+
+.board-panel {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: var(--shadow-sm);
+}
+
+.board-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 82px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.board-panel-title {
+  gap: 9px;
+  white-space: nowrap;
+}
+
+.board-panel-title h2 {
+  margin: 0;
+  font-size: 17px;
+  letter-spacing: -0.025em;
+}
+
+.board-panel-title span {
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-size: 11px;
+  font-weight: 600;
+}

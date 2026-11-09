@@ -1,0 +1,5 @@
+@media (max-width: 680px) {
+  .label-list .member-row-actions {
+    margin-left: 0;
+  }
+}

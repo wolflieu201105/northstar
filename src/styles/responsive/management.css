@@ -1,0 +1,38 @@
+@media (max-width: 680px) {
+  .board-team {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 16px;
+  }
+  .board-team-main {
+    gap: 11px;
+  }
+  .team-page-intro {
+    flex-wrap: wrap;
+  }
+  .team-page-intro > .button {
+    margin-top: 0;
+  }
+  .member-editor-heading, .member-editor-fields, .member-editor-footer {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .member-editor-footer > div {
+    width: 100%;
+  }
+  .member-editor-footer .button {
+    flex: 1;
+  }
+  .team-list li {
+    gap: 10px;
+    padding: 16px;
+  }
+  .member-row-actions {
+    width: 100%;
+    margin: 2px 0 0 44px;
+  }
+  .directory-filters {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}

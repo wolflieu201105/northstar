@@ -4,7 +4,7 @@ Phase 4 connects the installed database contract to the application data layer. 
 
 ## Database contract
 
-`src/types/database.ts` was generated from the hosted Supabase public schema after Phase 3 was confirmed installed. `AppClient` uses that schema with `createClient<Database>`.
+`src/shared/types/database.ts` was generated from the hosted Supabase public schema after Phase 3 was confirmed installed. `AppClient` uses that schema with `createClient<Database>`.
 
 Generated insert/update types describe database columns; they do not grant permission to write protected columns. The application services expose only supported operations, and Supabase grants/RLS remain the security boundary.
 
@@ -66,3 +66,5 @@ These transport tests make no hosted writes. End-to-end Supabase JWT/Data API is
 ## Review this checkpoint
 
 Run the existing app and check create → edit → move → refresh against your configured Supabase project. The visual board is unchanged, but those saves now pass through the new transaction and record server history. New feature controls appear in subsequent checkpoints.
+
+For the completed comment interface and updated pagination/retry behavior, see the [Phase 8 comment guide](task-comments.md). The results above record the Phase 4 checkpoint.

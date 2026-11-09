@@ -1,0 +1,34 @@
+.member-avatar {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.member-avatar.is-archived {
+  border-style: dashed;
+  filter: grayscale(0.65);
+}
+
+.member-avatar-stack {
+  display: inline-flex;
+  align-items: center;
+  padding-left: 5px;
+}
+
+.member-avatar-stack .member-avatar {
+  margin-left: -5px;
+}
+
+.avatar-overflow {
+  color: var(--accent-dark);
+  background: var(--accent-soft);
+  font-size: 10px;
+}

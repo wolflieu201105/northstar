@@ -1,0 +1,90 @@
+.task-title-button {
+  padding: 2px 0;
+  border: 0;
+  border-radius: 3px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.task-title-button:hover {
+  color: var(--accent-dark);
+}
+
+.form-fields {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+}
+
+.form-fields:disabled {
+  opacity: 0.7;
+}
+
+.task-detail-panel {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(640px, 100%);
+  max-width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  border-radius: 20px 0 0 20px;
+  border-color: var(--line);
+}
+
+.task-detail-panel::backdrop {
+  background: rgba(17, 21, 18, 0.48);
+  backdrop-filter: blur(3px);
+}
+
+.detail-header {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  background: var(--surface);
+}
+
+.detail-header h2 {
+  max-width: 500px;
+  font-size: 21px;
+  overflow-wrap: anywhere;
+}
+
+.detail-header .dialog-close {
+  flex: 0 0 auto;
+}
+
+.detail-save-bar {
+  padding: 15px 24px;
+}
+
+.save-message {
+  color: var(--muted-strong);
+  font-size: 11px;
+}
+
+.detail-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.detail-unavailable {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: 32px 28px;
+}
+
+.detail-unavailable h3, .detail-unavailable p {
+  margin: 0;
+}
+
+.detail-unavailable p {
+  color: var(--muted);
+  line-height: 1.6;
+}

@@ -228,21 +228,21 @@ Create files when needed, keeping the existing component/service/hook separation
 
 | Location | Responsibility |
 | --- | --- |
-| `src/types/database.ts` | Generated Supabase types after the migration is applied to a test database. |
-| `src/types/team.ts`, `src/types/label.ts` | Member and label domain/draft types. |
-| `src/types/comment.ts`, `src/types/activity.ts` | Comment rows and discriminated activity event payloads. |
-| `src/types/task.ts` | Separate persisted task fields from a task view model with assignees and labels. |
-| `src/services/team.ts`, `src/services/labels.ts` | Guest-owned member and label queries/mutations. |
-| `src/services/tasks.ts` | Existing reads/status operations plus transactional task saves. |
-| `src/services/comments.ts`, `src/services/activity.ts` | Task-specific comment and timeline reads; comment creation. |
-| `src/hooks/useWorkspaceData.ts` | Members/labels and board relationship state. |
-| `src/hooks/useTasks.ts` | Existing task operations extended for the saved task view model. |
-| `src/hooks/useTaskDetails.ts` | Detail-only comment/activity loading, pagination, and recovery. |
-| `src/hooks/useWorkspaceNavigation.ts` | Query-string view/task navigation and Back/Forward handling. |
-| `src/components/TaskDetailPanel.tsx` | Task metadata, comment/activity tabs, save and close behavior. |
-| `src/components/AssigneePicker.tsx`, `LabelPicker.tsx`, `MemberAvatar.tsx` | Reusable multi-selection and card/header presentation. |
-| `src/components/CommentList.tsx`, `CommentComposer.tsx`, `ActivityTimeline.tsx` | Detail-view discussion and history. |
-| `src/pages/TeamPage.tsx`, `src/pages/LabelsPage.tsx` | Management views within the existing app shell. |
+| `src/shared/types/database.ts` | Generated Supabase types after the migration is applied to a test database. |
+| `src/features/team/types.ts`, `src/features/labels/types.ts` | Member and label domain/draft types. |
+| `src/features/comments/types.ts`, `src/features/activity/types.ts` | Comment rows and discriminated activity event payloads. |
+| `src/features/tasks/types.ts` | Separate persisted task fields from a task view model with assignees and labels. |
+| `src/features/team/services/team.ts`, `src/features/labels/services/labels.ts` | Guest-owned member and label queries/mutations. |
+| `src/features/tasks/services/tasks.ts` | Existing reads/status operations plus transactional task saves. |
+| `src/features/comments/services/comments.ts`, `src/features/activity/services/activity.ts` | Task-specific comment and timeline reads; comment creation. |
+| `src/features/workspace/useWorkspaceData.ts` | Members/labels and board relationship state. |
+| `src/features/tasks/hooks/useTasks.ts` | Existing task operations extended for the saved task view model. |
+| `src/features/tasks/hooks/useTaskDetails.ts` | Detail-only comment/activity loading, pagination, and recovery. |
+| `src/app/hooks/useWorkspaceNavigation.ts` | Query-string view/task navigation and Back/Forward handling. |
+| `src/features/tasks/details/TaskDetailPanel.tsx` | Task metadata, comment/activity tabs, save and close behavior. |
+| `src/features/team/components/AssigneePicker.tsx`, `src/features/labels/components/LabelPicker.tsx`, `src/features/team/components/MemberAvatar.tsx` | Reusable multi-selection and card/header presentation. |
+| `src/features/comments/components/CommentList.tsx`, `src/features/comments/components/CommentComposer.tsx`, `src/features/activity/components/ActivityTimeline.tsx` | Detail-view discussion and history. |
+| `src/features/team/pages/TeamPage.tsx`, `src/features/labels/pages/LabelsPage.tsx` | Management views within the existing app shell. |
 | `supabase/schema.sql`, `supabase/migrations/` | Clean-install SQL and generated additive upgrade migration. |
 | `supabase/tests/` | Ownership, relationship, activity, and migration integration tests. |
 
@@ -291,7 +291,7 @@ Deliverable: [Navigation and task-detail guide](docs/navigation-and-task-details
 
 ### Phase 6 — Build team members and multiple assignees
 
-Owner: Codex | Status: Implemented — ready for checkpoint review | Next action: Review members, avatars, assignment persistence, and history before Phase 7 label management.
+Owner: Codex | Status: Implemented — checkpoint accepted | Next action: Keep live persistence/history checks in the verification phase; Phase 7 is ready for review.
 
 Deliverable: [Team member and assignee guide](docs/team-members.md). Inline create/edit forms, archive/restore views, assignment counts, board/card avatars, and searchable multi-assignment on creation/edit are implemented. Existing task links survive archival. Hosted constraints and table access were checked read-only; no new SQL or hosted data writes were needed. Live refresh/history and browser interaction checks remain below for this checkpoint.
 
@@ -318,56 +318,66 @@ Deliverable: [Team member and assignee guide](docs/team-members.md). Inline crea
 
 ### Phase 7 — Build custom labels and task tagging
 
-Owner: ___ | Status: Not started | Next action: Connect label management and the label picker.
+Owner: Codex | Status: Implemented — checkpoint accepted | Next action: Keep live label persistence/activity checks in Phase 11; Phase 8 is ready for review.
+
+Deliverable: [Label and task-tagging guide](docs/labels-and-tags.md). Label create/edit/archive/restore, case-insensitive duplicate recovery with a restore offer, usage counts, creation/detail pickers, and card chips with expandable overflow are implemented. Hosted constraints and table access were checked read-only; no new SQL or hosted data writes were needed. Live refresh/history and browser interaction checks remain manual checkpoint items. Board label filtering remains in Phase 10.
 
 #### 7.1 Manage custom labels
 
-- [ ] Add label creation, rename, color, archive, and restore controls in the Labels view.
-- [ ] Use examples such as Bug, Feature, and Design as placeholders, not shared global records.
-- [ ] Report case-insensitive duplicate names with an actionable message.
-- [ ] Offer restore for a matching archived label rather than creating an ambiguous duplicate.
-- [ ] Render text safely and keep label text readable against its palette background.
+- [x] Add label creation, rename, color, archive, and restore controls in the Labels view.
+- [x] Use examples such as Bug, Feature, and Design as placeholders, not shared global records.
+- [x] Report case-insensitive duplicate names with an actionable message.
+- [x] Offer restore for a matching archived label rather than creating an ambiguous duplicate.
+- [x] Render text safely and keep label text readable against its palette background.
 
 #### 7.2 Attach multiple labels
 
-- [ ] Add a multi-select picker to creation and task details.
-- [ ] Allow zero or multiple labels and save relationship changes atomically with other task edits.
-- [ ] Render label chips on cards with a compact overflow treatment for long lists.
-- [ ] Update label names/colors wherever they appear after an edit.
-- [ ] Preserve archived labels already on tasks, allow removal, and reject new archived-label links.
+- [x] Add a multi-select picker to creation and task details.
+- [x] Allow zero or multiple labels and save relationship changes atomically with other task edits.
+- [x] Render label chips on cards with a compact overflow treatment for long lists.
+- [x] Update label names/colors wherever they appear after an edit.
+- [x] Preserve archived labels already on tasks, allow removal, and reject new archived-label links.
 - [ ] Verify label additions/removals are recorded in activity and persist after refresh.
 
 **Done when:** Labels can be managed and attached to tasks, their card chips remain consistent, and relationships remain private to the guest.
 
 ### Phase 8 — Add persistent task comments
 
-Owner: ___ | Status: Not started | Next action: Connect the composer and paginated comment list.
+Owner: Codex | Status: Implemented — ready for checkpoint review | Next action: Review comment persistence, failed requests, and long history before Phase 9 timeline improvements.
+
+Deliverable: [Task comments guide](docs/task-comments.md). Separate list/composer components, explicit post/page retries, validation, precise chronological ordering, recent-post gaps, reload recovery, and draft/identity isolation are implemented. Hosted table constraints, grants, index, and cascade configuration were checked read-only. No new SQL or hosted comment writes were needed; live browser persistence/deletion and guest API isolation remain manual/Phase 11 checks.
 
 #### 8.1 Read comments
 
-- [ ] Query the separate `comments` table using the selected task and guest identity.
-- [ ] Display comments oldest first using `created_at` plus ID as a stable tie-breaker.
-- [ ] Show the guest author, plain-text body, and a localized timestamp using `<time datetime="...">`.
-- [ ] Include an exact local date/time when using a relative-time display.
-- [ ] Keep initial loading, no-comments, read-error, and Load more states distinct.
-- [ ] Use a stable cursor and batch size, such as 50 comments, so long discussions do not block opening a task.
+- [x] Query the separate `comments` table using the selected task and guest identity.
+- [x] Display comments oldest first using `created_at` plus ID as a stable tie-breaker.
+- [x] Show the guest author, plain-text body, and a localized timestamp using `<time datetime="...">`.
+- [x] Include an exact local date/time when using a relative-time display. Comments currently show exact localized times.
+- [x] Keep initial loading, no-comments, read-error, and Load more states distinct.
+- [x] Use a stable cursor and batch size, such as 50 comments, so long discussions do not block opening a task.
 
 #### 8.2 Write comments
 
-- [ ] Reject whitespace-only comments and enforce the 2,000-character limit in both layers.
-- [ ] Disable duplicate submissions while a comment is saving; leave the draft intact on failure.
-- [ ] Append the saved server row and clear the draft only after a confirmed successful insert.
-- [ ] Reconcile uncertain network outcomes before retrying so the same comment is not posted twice.
-- [ ] Show an inline failure and Retry action without closing the detail panel.
-- [ ] Preserve line breaks and render content as plain text, with no raw HTML injection.
-- [ ] Do not allow choosing an assignee profile as the authenticated comment author.
-- [ ] Keep comments attached to their task; deleting the task removes them through the database relationship.
+- [x] Reject whitespace-only comments and enforce the 2,000-character limit in both layers.
+- [x] Disable duplicate submissions while a comment is saving; leave the draft intact on failure.
+- [x] Append the saved server row and clear the draft only after a confirmed successful insert.
+- [x] Reconcile uncertain network outcomes before retrying so the same comment is not posted twice.
+- [x] Show an inline failure and Retry action without closing the detail panel.
+- [x] Preserve line breaks and render content as plain text, with no raw HTML injection.
+- [x] Do not allow choosing an assignee profile as the authenticated comment author.
+- [x] Keep comments attached to their task; deleting the task removes them through the database relationship. Hosted cascade configuration is verified; live deletion remains a manual check.
 
 **Done when:** Comments persist in their own table, appear chronologically with timestamps, and handle validation, failures, task switching, and pagination correctly.
 
+### Maintenance checkpoint — Organize source and styles
+
+Owner: Codex | Status: Implemented — ready for review | Next action: Review the refactor before continuing to Phase 9.
+
+Deliverable: [Architecture and style guide](docs/architecture.md). Feature folders now contain their UI, data operations, types, and colocated tests. The app shell, board page, task-detail editor, and activity view have separate responsibilities. CSS uses small ordered modules; a comparison confirms that all 324 original rules, declarations, and media queries retain their cascade order. This checkpoint adds no feature behavior, SQL changes, or dependencies.
+
 ### Phase 9 — Display the task activity timeline
 
-Owner: ___ | Status: Not started | Next action: Render the persisted events created by Phase 3.
+Owner: ___ | Status: Not started | Next action: Complete typed event formatting, relative timestamps, and timeline recovery using the existing persisted-event view.
 
 #### 9.1 Define readable event rendering
 

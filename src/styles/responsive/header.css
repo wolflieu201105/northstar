@@ -1,0 +1,18 @@
+@media (max-width: 1100px) {
+  .app-header {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 76px;
+    gap: 12px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .workspace-nav {
+    order: 3;
+    flex-basis: 100%;
+  }
+  .workspace-nav button {
+    flex: 1;
+    justify-content: center;
+  }
+}

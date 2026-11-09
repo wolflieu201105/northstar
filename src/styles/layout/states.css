@@ -1,0 +1,145 @@
+.centered-state {
+  display: flex;
+  min-height: 100vh;
+  padding: 40px 20px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.centered-state h1 {
+  max-width: 650px;
+  margin-bottom: 12px;
+  font-size: clamp(28px, 4vw, 42px);
+  letter-spacing: -0.045em;
+}
+
+.centered-state > p {
+  max-width: 600px;
+  margin-bottom: 24px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.state-illustration,
+.loading-orbit {
+  display: grid;
+  width: 70px;
+  height: 70px;
+  margin-bottom: 22px;
+  place-items: center;
+  border-radius: 22px;
+}
+
+.state-illustration {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.config-illustration {
+  position: relative;
+}
+
+.config-illustration > span {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--accent-soft);
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.error-illustration {
+  color: var(--danger);
+  background: var(--coral-soft);
+}
+
+.loading-orbit {
+  position: relative;
+  border: 1px solid #cfe0d5;
+  animation: spin 2.2s linear infinite;
+}
+
+.loading-orbit::before,
+.loading-orbit span {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.loading-orbit::before {
+  width: 11px;
+  height: 11px;
+  content: '';
+  top: -5px;
+}
+
+.loading-orbit span {
+  width: 22px;
+  height: 22px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.config-steps {
+  display: grid;
+  width: min(100%, 620px);
+  margin-bottom: 18px;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: var(--shadow-sm);
+}
+
+.config-steps > div {
+  display: grid;
+  gap: 8px;
+  padding: 20px 16px;
+  justify-items: center;
+}
+
+.config-steps > div + div {
+  border-left: 1px solid var(--line);
+}
+
+.config-steps span {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.config-steps p {
+  margin: 0;
+  color: var(--muted-strong);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+code {
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: var(--accent-dark);
+  background: var(--accent-soft);
+  font-size: 0.93em;
+}
+
+.state-note {
+  gap: 6px;
+  margin: 0 !important;
+  color: #8f9992 !important;
+  font-size: 11px;
+}

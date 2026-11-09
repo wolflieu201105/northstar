@@ -1,0 +1,21 @@
+@media (max-width: 980px) {
+  .board-intro {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .summary-cards {
+    width: 100%;
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .summary-card {
+    justify-content: center;
+  }
+  .board-panel-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .board-toolbar {
+    justify-content: flex-start;
+    width: 100%;
+  }
+}

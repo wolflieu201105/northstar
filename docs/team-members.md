@@ -32,4 +32,4 @@ Read-only hosted metadata checks confirmed the member name/color constraints, RL
 
 Local validation passes: 52 tests across 13 files, ESLint, TypeScript, and the production build. The Team management page is loaded as a separate bundle.
 
-The existing member service follows Supabase's [filtered update and returned-row pattern](https://supabase.com/docs/reference/javascript/update). Label management remains the next checkpoint in [path-updates.md](../path-updates.md).
+The existing member service follows Supabase's [filtered update and returned-row pattern](https://supabase.com/docs/reference/javascript/update). Label management is documented in the [Phase 7 guide](labels-and-tags.md); the remaining work is in [path-updates.md](../path-updates.md).

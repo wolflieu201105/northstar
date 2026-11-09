@@ -85,15 +85,15 @@ Create files when needed; use this as a suggested structure.
 
 | Location | Responsibility |
 | --- | --- |
-| `src/lib/supabase.ts` | Shared Supabase client. |
-| `src/types/task.ts` | Task, status, and priority types. |
-| `src/hooks/useGuestSession.ts` | Restore or create the guest session. |
-| `src/services/tasks.ts` | Task database operations. |
-| `src/hooks/useTasks.ts` | Task state, loading, and mutation handling. |
-| `src/components/Board.tsx` | Board layout and drag/drop coordination. |
-| `src/components/BoardColumn.tsx` | Column header, count, and drop area. |
-| `src/components/TaskCard.tsx` | Task presentation and interactions. |
-| `src/components/TaskForm.tsx` | Creation and optional editing form. |
+| `src/shared/lib/supabase.ts` | Shared Supabase client. |
+| `src/features/tasks/types.ts` | Task, status, and priority types. |
+| `src/features/auth/useGuestSession.ts` | Restore or create the guest session. |
+| `src/features/tasks/services/tasks.ts` | Task database operations. |
+| `src/features/tasks/hooks/useTasks.ts` | Task state, loading, and mutation handling. |
+| `src/features/board/components/Board.tsx` | Board layout and drag/drop coordination. |
+| `src/features/board/components/BoardColumn.tsx` | Column header, count, and drop area. |
+| `src/features/tasks/components/TaskCard.tsx` | Task presentation and interactions. |
+| `src/features/tasks/components/TaskForm.tsx` | Creation and optional editing form. |
 | `src/styles/` | Shared tokens, layout, and component styles. |
 | `supabase/schema.sql` | Reproducible application tables, constraints, grants, indexes, and policies. |
 

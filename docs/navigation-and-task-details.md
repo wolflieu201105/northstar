@@ -2,7 +2,9 @@
 
 Phase 5 adds a task-detail panel and workspace navigation. It uses the Phase 4 services and installed Phase 3 schema; there is no additional SQL or environment configuration.
 
-This document records the Phase 5 checkpoint. [Phase 6](team-members.md) now adds Team management and assignees during task creation. Label management remains in Phase 7.
+This document records the Phase 5 checkpoint. [Phase 6](team-members.md) adds Team management and assignees during task creation. [Phase 7](labels-and-tags.md) adds label management, tagging during creation, and card chips.
+
+[Phase 8](task-comments.md) completes comment pagination, retry actions, chronological gaps, and draft recovery.
 
 ## Available in this checkpoint
 

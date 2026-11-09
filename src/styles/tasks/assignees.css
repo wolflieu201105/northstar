@@ -1,0 +1,21 @@
+.task-assignees {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 13px;
+  padding-top: 11px;
+  border-top: 1px solid var(--line);
+}
+
+.task-assignees .member-avatar {
+  width: 29px;
+  height: 29px;
+  font-size: 9px;
+}
+
+.unassigned-label, .archived-assignee-note {
+  color: var(--muted);
+  font-size: 10px;
+}

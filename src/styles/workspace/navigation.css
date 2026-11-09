@@ -1,0 +1,36 @@
+.workspace-nav {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+
+.workspace-nav button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--muted-strong);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.workspace-nav button:hover {
+  background: var(--accent-soft);
+}
+
+.workspace-nav button[aria-current="page"] {
+  color: white;
+  background: var(--black);
+  box-shadow: var(--shadow-sm);
+}
+
+.workspace-nav button[aria-current="page"] svg {
+  color: #55d695;
+}

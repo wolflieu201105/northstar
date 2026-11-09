@@ -1,0 +1,128 @@
+.workspace-directory {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.directory-intro {
+  margin-bottom: 28px;
+}
+
+.directory-intro h1 {
+  margin-bottom: 10px;
+  font-size: clamp(30px, 4vw, 42px);
+  letter-spacing: -0.04em;
+}
+
+.directory-intro p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.directory-panel {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.directory-panel-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 70px;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--line);
+  color: var(--accent-dark);
+}
+
+.directory-panel-heading h2 {
+  flex: 1;
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.directory-panel-heading > span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.directory-empty {
+  display: grid;
+  justify-items: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.directory-empty > svg {
+  margin-bottom: 18px;
+  color: var(--accent);
+}
+
+.directory-empty h3 {
+  margin-bottom: 9px;
+  font-size: 17px;
+}
+
+.directory-empty p, .directory-message, .directory-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.directory-message, .directory-note {
+  padding: 22px 24px;
+}
+
+.directory-note {
+  background: var(--surface-soft);
+}
+
+.directory-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.directory-list li {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.directory-list strong {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.directory-swatch {
+  display: grid;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 11px;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.directory-status {
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: var(--accent-dark);
+  background: var(--accent-soft);
+  font-size: 11px;
+}
+
+.directory-status.is-archived {
+  color: var(--muted-strong);
+  background: var(--surface-soft);
+}

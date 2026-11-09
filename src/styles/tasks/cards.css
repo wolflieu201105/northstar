@@ -1,0 +1,162 @@
+.task-card {
+  position: relative;
+  padding: 14px;
+  border: 1px solid #dde3df;
+  border-radius: 13px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(36, 34, 47, 0.03);
+  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+}
+
+.task-card:hover {
+  border-color: #ccd6cf;
+  box-shadow: 0 8px 22px rgba(43, 37, 65, 0.07);
+  transform: translateY(-1px);
+}
+
+.task-card.is-dragging {
+  z-index: 10;
+  border-color: #65a681;
+  box-shadow: var(--shadow-md);
+  transform: rotate(1.5deg);
+}
+
+.task-card.is-saving {
+  opacity: 0.67;
+}
+
+.task-card-topline {
+  justify-content: space-between;
+  margin-bottom: 11px;
+}
+
+.priority-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  border-radius: 7px;
+  color: var(--muted-strong);
+  background: #f1f4f2;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.priority-badge > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #929c95;
+}
+
+.priority-high {
+  color: #aa5048;
+  background: var(--coral-soft);
+}
+
+.priority-high > span {
+  background: var(--coral);
+}
+
+.priority-normal > span {
+  background: var(--accent);
+}
+
+.priority-low {
+  color: #307b65;
+  background: var(--green-soft);
+}
+
+.priority-low > span {
+  background: var(--green);
+}
+
+.card-actions {
+  gap: 1px;
+  margin-right: -6px;
+}
+
+.icon-button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  color: #8d9891;
+  background: transparent;
+  transition: color 150ms ease, background 150ms ease;
+}
+
+.icon-button:hover:not(:disabled) {
+  color: var(--accent-dark);
+  background: var(--accent-soft);
+}
+
+.drag-handle {
+  cursor: grab;
+  touch-action: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.task-card h3 {
+  margin-bottom: 8px;
+  font-size: 14px;
+  line-height: 1.45;
+  letter-spacing: -0.012em;
+  overflow-wrap: anywhere;
+}
+
+.task-description {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-bottom: 15px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.task-card-footer {
+  justify-content: space-between;
+  min-height: 22px;
+  padding-top: 10px;
+  border-top: 1px solid #ebefec;
+}
+
+.due-date {
+  gap: 5px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.due-overdue {
+  color: var(--danger);
+}
+
+.due-today {
+  color: #b16e20;
+}
+
+.due-upcoming {
+  color: var(--blue);
+}
+
+.no-due-date,
+.saving-label {
+  color: #a2aaa5;
+  font-size: 10px;
+}
+
+.saving-label {
+  color: var(--accent);
+  font-weight: 700;
+}

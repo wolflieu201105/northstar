@@ -1,0 +1,149 @@
+.task-discussion {
+  border-top: 1px solid var(--line);
+}
+
+.detail-tabs {
+  display: flex;
+  gap: 20px;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--line);
+}
+
+.detail-tabs button {
+  min-height: 52px;
+  padding: 0 2px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  color: var(--muted);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.detail-tabs button[aria-selected="true"] {
+  border-bottom-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+.discussion-content {
+  display: grid;
+  gap: 16px;
+  padding: 24px 28px 32px;
+}
+
+.comment-list, .activity-list {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comment-list:empty, .activity-list:empty {
+  display: none;
+}
+
+.comment-list li {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+
+.comment-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 5px;
+  font-size: 11px;
+}
+
+.comment-meta strong {
+  color: var(--accent-dark);
+}
+
+.comment-list time, .activity-list time {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.comment-list p {
+  margin: 9px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.activity-list li {
+  position: relative;
+  padding: 0 0 14px 21px;
+  border-bottom: 1px solid var(--line);
+}
+
+.activity-list li::before {
+  position: absolute;
+  top: 5px;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  content: '';
+}
+
+.activity-list p {
+  margin: 0 0 5px;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.comment-composer {
+  display: grid;
+  gap: 11px;
+  padding-top: 8px;
+}
+
+.comment-composer-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.comment-composer-footer small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.comment-pagination {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: 14px 0;
+  border-block: 1px dashed var(--line-strong);
+}
+
+.comment-pagination .form-error {
+  width: 100%;
+}
+
+.comment-posted-message {
+  margin: 0;
+  color: var(--accent-dark);
+  font-size: 12px;
+}
+
+.detail-loading-notice {
+  position: fixed;
+  z-index: 30;
+  right: 20px;
+  bottom: 20px;
+  padding: 16px 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+  box-shadow: var(--shadow-md);
+}

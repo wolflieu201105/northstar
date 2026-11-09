@@ -1,0 +1,22 @@
+@media (max-width: 680px) {
+  .task-detail-panel {
+    border-radius: 0;
+  }
+  .detail-tabs {
+    padding: 0 20px;
+  }
+  .discussion-content {
+    padding: 20px 20px max(28px, env(safe-area-inset-bottom));
+  }
+  .detail-save-bar .dialog-footer-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .detail-save-bar .save-message {
+    flex-basis: 100%;
+    text-align: right;
+  }
+  .relation-picker-heading {
+    flex-wrap: wrap;
+  }
+}

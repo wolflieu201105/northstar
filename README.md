@@ -21,6 +21,9 @@ The interface uses a restrained black-and-green visual system and supports deskt
 - Select existing assignees/labels, post timestamped comments, and inspect persisted activity
 - Create, edit, archive, and restore team profiles with optional avatar colors
 - Assign multiple members during task creation/editing and display member avatars on cards
+- Create, rename, recolor, archive, and restore custom labels with duplicate-name recovery
+- Attach multiple labels during task creation/editing and expand label chips on cards
+- Chronological comment pagination, explicit save/page retry, and protected comment drafts
 - Drag-and-drop status changes with optimistic updates and rollback on failure
 - Keyboard/mobile status selector as an alternative to dragging
 - Descriptions, priority levels, and calendar due dates
@@ -32,7 +35,7 @@ The interface uses a restrained black-and-green visual system and supports deskt
 - Accessible labels, focus states, dialog behavior, and reduced-motion support
 - Lazy-loaded board and task form bundles
 
-The enhancement roadmap is in [path-updates.md](path-updates.md). Phase 6 is ready for review; label management follows in Phase 7. See [the team/assignee checkpoint review](docs/team-members.md#checkpoint-review) for manual checks. This checkpoint requires no additional SQL.
+The enhancement roadmap is in [path-updates.md](path-updates.md). Phase 8 is ready for review; activity timeline improvements follow in Phase 9. See [the comments checkpoint review](docs/task-comments.md#checkpoint-review) for manual checks. This checkpoint requires no additional SQL. Assignee/label board filters follow in Phase 10.
 
 ## Technology
 
@@ -156,16 +159,24 @@ The included [GitHub Actions workflow](.github/workflows/ci.yml) runs `npm ci`, 
 
 ```text
 src/
-  components/       Board, columns, cards, forms, and application states
-  hooks/            Guest-session and task-state coordination
-  lib/              Supabase setup and task utilities
-  services/         Supabase task queries and mutations
-  styles/           Responsive black-and-green visual system
+  app/              Application shell, navigation, and workspace coordination
+  features/
+    auth/           Guest-session startup
+    board/          Board layout, filters, summary, and loading/empty states
+    tasks/          Task forms, cards, details, hooks, services, and stores
+    team/           Member management, avatars, and assignee controls
+    labels/         Label management, chips, and tagging controls
+    comments/       Comment list, composer, and persistence
+    activity/       Activity rendering, formatting, and validation
+    workspace/      Shared member/label lookup state
+  shared/           Reusable controls, hooks, data helpers, and generated DB types
+  styles/           Ordered CSS modules for foundations, features, and responsiveness
   test/             Shared test setup and fixtures
-  types/            Task domain types and status metadata
 supabase/
-  schema.sql         Reproducible schema, grants, trigger, and RLS policies
+  schema.sql        Schema, grants, triggers, and RLS policies
 ```
+
+Edit source files under `src/`. `npm run build` regenerates `dist/` with hashed bundles. Tests live alongside the code they exercise. See [the architecture guide](docs/architecture.md) for file locations and CSS import rules.
 
 ## Design decisions
 

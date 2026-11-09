@@ -1,0 +1,131 @@
+.label-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  width: fit-content;
+  min-height: 25px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.label-chip > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.label-chip small {
+  flex: 0 0 auto;
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.label-chip.is-archived {
+  border-color: currentColor;
+  border-style: dashed;
+}
+
+.task-label-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin: 12px 0 0;
+}
+
+.task-label-chips > .label-chip {
+  max-width: min(100%, 180px);
+}
+
+.label-overflow {
+  max-width: 100%;
+}
+
+.label-overflow summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 27px;
+  padding: 3px 7px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--muted-strong);
+  background: var(--surface-soft);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.label-overflow summary:focus-visible {
+  outline: 2px solid var(--accent-dark);
+  outline-offset: 2px;
+}
+
+.label-overflow[open] {
+  flex-basis: 100%;
+}
+
+.label-overflow-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.label-overflow-list .label-chip {
+  max-width: 100%;
+}
+
+.label-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.label-preview > span:first-child {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.label-preview .label-chip {
+  min-height: 30px;
+  font-size: 12px;
+}
+
+.label-restore-offer {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.label-restore-offer p {
+  margin: 0;
+  color: var(--muted-strong);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.label-restore-offer .button {
+  font-size: 12px;
+}
+
+.label-list .team-member-info {
+  min-width: 140px;
+}
+
+.label-list .label-chip {
+  max-width: 100%;
+  font-size: 12px;
+}
+
+.labels-page > .form-error {
+  margin-bottom: 16px;
+}

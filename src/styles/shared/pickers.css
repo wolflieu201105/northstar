@@ -1,0 +1,82 @@
+.text-button {
+  padding: 3px 0;
+  border: 0;
+  border-radius: 3px;
+  color: var(--accent-dark);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.form-error p {
+  margin: 0 0 6px;
+}
+
+.relation-picker {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.relation-picker legend {
+  margin-bottom: 6px;
+  padding: 0;
+  color: var(--muted-strong);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.relation-picker-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.relation-picker-heading > span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.relation-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.relation-option {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.relation-option.is-selected {
+  border-color: #a3cdb3;
+  background: var(--accent-soft);
+}
+
+.relation-option input {
+  margin: 0;
+  accent-color: var(--accent-dark);
+}
+
+.relation-option > span:last-child {
+  overflow-wrap: anywhere;
+}
+
+.color-dot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}

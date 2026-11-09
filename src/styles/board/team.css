@@ -1,0 +1,45 @@
+.board-team {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 22px;
+  padding: 17px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.board-team-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.team-strip-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  color: var(--accent-dark);
+  background: var(--accent-soft);
+}
+
+.board-team h2 {
+  margin: 0 0 3px;
+  font-size: 13px;
+}
+
+.board-team p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.board-team .button {
+  flex: 0 0 auto;
+  font-size: 12px;
+}
