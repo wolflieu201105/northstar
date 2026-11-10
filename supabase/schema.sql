@@ -1,8 +1,8 @@
--- GENERATED clean installation: foundation plus Phases 13, 17, and 18. Do not use over an existing schema.
+-- Complete Northstar schema for a new Supabase project. Do not run over an existing application schema.
 begin;
 
--- Phase 12: clean shared-group foundation.
--- New APIs are closed until Phase 13. See docs/shared-groups-migration.md.
+-- Shared-group tables and integrity constraints.
+-- Read and write access is configured later in this file. See README.md for setup.
 
 create schema if not exists private;
 revoke create on schema private from public, anon, authenticated;
@@ -305,8 +305,8 @@ comment on column public.comments.author_user_id is 'Nullable after account dele
 
 notify pgrst, 'reload schema';
 
--- Phase 13: secure shared-group operations.
--- Phase 13: membership helpers and the serialized mutation boundary.
+-- Secure shared-group operations.
+-- Membership helpers and the serialized mutation boundary.
 create table if not exists private.api_rate_limits (
   user_id uuid not null references auth.users(id) on delete cascade,
   bucket text not null,
@@ -951,11 +951,11 @@ begin
 end;
 $$;
 
--- Phase 17: private, content-free invalidations; application rows are never published.
+-- Private, content-free invalidations; application rows are never published.
 do $$ begin
   if to_regprocedure('realtime.send(jsonb,text,text,boolean)') is null
     or to_regclass('realtime.messages') is null then
-    raise exception 'Supabase Realtime must be installed before Phase 17.';
+    raise exception 'Supabase Realtime must be installed before the application schema.';
   end if;
   -- Supabase owns this table and already enables RLS. Verify it without ALTER TABLE.
   if not (select relrowsecurity from pg_class where oid='realtime.messages'::regclass) then
@@ -1068,7 +1068,7 @@ do $$ declare relation_name text; begin
   end loop;
 end $$;
 
--- Phase 18: business revision conflicts must not trigger PostgREST transaction retries.
+-- Business revision conflicts must not trigger PostgREST transaction retries.
 -- Preserve the checked private implementation, arguments, grants, and atomic rollback.
 -- Public invoker wrappers translate the internal serialization signal into HTTP 409.
 create or replace function public.save_task(p_group_id uuid,p_task_id uuid,p_changes jsonb default '{}',

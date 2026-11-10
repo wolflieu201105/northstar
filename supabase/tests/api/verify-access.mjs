@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { allowed, check, denied, eventually, hidden, join } from './checks.mjs'
+import { verifyRevisionConflicts } from './verify-conflicts.mjs'
 
 const taskSelect = '*,task_assignments(member:group_members!task_assignments_active_member_fkey(profile:profiles!group_members_user_id_fkey(id,username,display_name,avatar_color))),task_labels(label:labels!task_labels_label_fkey(*))'
 const tables = ['groups', 'group_members', 'tasks', 'labels', 'task_assignments', 'task_labels', 'comments', 'task_activity']
@@ -93,7 +94,7 @@ export async function verifyAccess(fixtures) {
   check(messages.every((payload) => payload && Object.keys(payload).every((key) => key === 'id')
     && (payload.id === undefined || /^[0-9a-f-]{36}$/i.test(payload.id))), 'broadcast payloads contain only transport metadata')
   if (!process.argv.includes('--skip-conflicts')) {
-    await denied(save(A, { ...task, updated_at: oldToken }, { title: 'Stale edit' }), 'stale edit denied', 'PT409')
+    await verifyRevisionConflicts({ editor: A.client, reader: B.client, groupId: G, task, oldToken, label })
   } else console.log('SKIP: stale-revision HTTP check until the Phase 18 migration is applied.')
   const events = await history()
   check(events.some((event) => event.event_type === 'status_changed' && event.actor_user_id === B.id && event.actor_name === 'Phase18 B'), 'history records actual member actor')

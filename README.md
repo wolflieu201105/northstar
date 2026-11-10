@@ -1,213 +1,121 @@
 # Northstar Task Board
 
-Northstar is a responsive Kanban task manager for shared groups. Visitors can start as guests, register that same identity with email/password, and invite other real accounts to collaborate. Each account starts with an empty private group and can join or create more groups.
+A shared-group Kanban task manager built with React, TypeScript, Vite, and Supabase, using a black-and-green interface.
 
-The interface uses a restrained black-and-green visual system and supports desktop and narrow-screen workflows.
-
-## Project status
-
-- Accounts, groups, invitations, and group-scoped board: implemented through Phase 16; local tests/lint/build pass
-- Group SQL: Phases 12–13/17 verified; [Phase 18 HTTP-conflict fix](docs/phase18-verification.md) ready to apply
-- Native email delivery and real two-browser flows: manual verification pending
-- Realtime synchronization: user-confirmed working; native authorized/denied WebSocket checks pass; extended browser review pending
-- Live demo: pending deployment
-- Source repository: pending publication
+- [Live app](https://northstar-six-zeta.vercel.app/)
+- [GitHub repository](https://github.com/wolflieu201105/northstar)
+- [Assessment PDF](deliverables/GiaHuy_Pham_task_manager_assessment.pdf)
 
 ## Features
 
-The current frontend uses the shared-group schema and checked APIs. See [Auth setup and the review checkpoint](docs/accounts-and-groups.md) before testing registration/recovery.
-
-- Automatic anonymous guest sessions that persist in the browser
-- Group task storage protected by accepted membership and Supabase Row Level Security
-- Email/password login, same-identity guest registration, resumable native confirmation, recovery, and explicit sign-out
-- Globally unique usernames, copyable account IDs, editable self profiles, and real assignee identities
-- Group creation/switching, invitation previews and inboxes, recipient acceptance, leave/removal/ownership transfer/deletion
-- Four workflow columns: To Do, In Progress, In Review, and Done
-- Create, edit, and delete task flows
-- Board, Members, Labels, Groups, Invitations, and Account navigation with group/task URLs and per-group filters
-- Responsive task-detail panel with save-in-place editing and unsaved-draft protection
-- Select existing assignees/labels, post timestamped comments, and inspect persisted activity
-- Assign multiple members during task creation/editing and display member avatars on cards
-- Create, rename, recolor, archive, and restore custom labels with duplicate-name recovery
-- Attach multiple labels during task creation/editing and expand label chips on cards
-- Chronological comment pagination, explicit save/page retry, and protected comment drafts
-- Read-only activity history with before/after details, updating relative times, and paginated recovery
-- Drag-and-drop status changes with optimistic updates and rollback on failure
-- Keyboard/mobile status selector as an alternative to dragging
-- Descriptions, priority levels, and calendar due dates
-- Overdue, due-today, and upcoming indicators that refresh at local midnight and on page resume
-- Neutral saved due dates for completed tasks
-- Combined search, priority, multiple-assignee, and multiple-label filters with removable chips
-- Unassigned/Unlabeled modes and archived labels still linked to tasks
-- Whole-board total, completed, and overdue summaries alongside filtered result counts
-- Private live updates with background reconciliation, reconnect/periodic recovery, and connection status
-- Loading, empty, configuration, error, retry, and save states
-- Responsive horizontal board navigation on narrow screens
-- Accessible labels, focus states, dialog behavior, and reduced-motion support
-- Lazy-loaded board and task form bundles
-
-The roadmap is in [path-updates.md](path-updates.md), also linked from [update_path.md](update_path.md). Phases 14–16 implement accounts, groups, invitations, and scoped task work on the [Phase 13 API contract](docs/group-security.md). Phase 17 adds [private live updates and recovery](docs/realtime.md). [Phase 18 verification](docs/phase18-verification.md) is in progress at its SQL-fix checkpoint; release remains Phase 19.
-
-**Existing verified database:** Apply only the [additive Phase 18 HTTP-conflict fix and verification](docs/phase18-verification.md#sql-to-apply-now). Do not rerun the destructive reset. The [Auth configuration](docs/accounts-and-groups.md#supabase-auth-setup) remains the same.
-
-## Technology
-
-- React 19 and TypeScript
-- Vite
-- Supabase Auth, Postgres, and Row Level Security
-- dnd kit React
-- Lucide icons
-- Vitest and Testing Library
-- ESLint
-
-## Security model
-
-The new backend gives registered users and authenticated guests the same group permissions. Current database membership determines access; creator IDs, usernames, and user metadata do not. RLS scopes reads, self-profile edits allow only username/name/color, and all other client writes go through checked atomic APIs. Pending invitations expose a minimal preview without board access.
-
-Group-owned tasks, comments, and history survive a non-owner account deletion with saved author names. Owner accounts must transfer or delete their groups first. Activity is generated from committed changes; clients cannot insert or rewrite it. See [the security contract and verification boundaries](docs/group-security.md).
-
-The browser uses only a publishable Supabase key. Never place a secret key, service-role key, database password, or access token in a `VITE_*` variable.
-
-## Prerequisites
-
-- Node.js 22.12 or newer; Node.js 24 is used by CI
-- npm 11
-- A Supabase project
-
-## Supabase setup
-
-1. Create or open a Supabase project.
-2. In Authentication settings, enable anonymous sign-ins.
-3. Open the SQL Editor.
-4. Follow the [group setup guide](docs/shared-groups-migration.md): use [`supabase/schema.sql`](supabase/schema.sql) for an empty project or [`supabase/reset.sql`](supabase/reset.sql) to discard the old application database. The current frontend targets this group backend.
-5. Configure Email/Password, manual linking, and allowed callback URLs using the [Auth guide](docs/accounts-and-groups.md#supabase-auth-setup).
-6. Copy the project URL and a browser-safe publishable key.
-
-The complete SQL includes group integrity, Auth profile initialization, RLS/grants, protected history, invitation/group operations, and atomic task APIs. Run [verify-phase13.sql](supabase/verify-phase13.sql) afterward. Historical private-workspace setup is superseded.
+- Guest entry, email/password accounts, guest registration, and password recovery.
+- Unique usernames, real account profiles, multiple groups, and invitation acceptance.
+- Four task statuses: To Do, In Progress, In Review, and Done.
+- Task creation/editing/deletion, drag-and-drop moves, priorities, and due dates.
+- Multiple assignees with initials/color avatars, custom labels, and label archival.
+- Task comments and database-generated activity with before/after changes.
+- Combined search, priority, assignee, and label filters; group-wide task statistics.
+- Private live updates, reconnect recovery, retained drafts, and explicit stale-save conflicts.
+- Responsive layouts, keyboard status controls, and group/task links.
 
 ## Local setup
 
-Install dependencies:
+Use Node.js 24 (see `.nvmrc`), npm 11, and a Supabase project.
 
 ```bash
-npm install
-```
-
-Copy the environment template:
-
-```bash
+git clone https://github.com/wolflieu201105/northstar.git
+cd northstar
+npm ci
 cp .env.example .env.local
 ```
 
-On PowerShell:
-
-```powershell
-Copy-Item .env.example .env.local
-```
-
-Set the following values in `.env.local`:
+On PowerShell, use `Copy-Item .env.example .env.local` for the last command. Set your own project values:
 
 ```dotenv
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your_key_here
 ```
 
-Legacy projects may use `VITE_SUPABASE_ANON_KEY` instead of the publishable-key variable, but a current publishable key is preferred.
+In Supabase:
 
-Start the development server:
+1. Enable anonymous sign-ins, Email/Password, and **Allow manual linking** in Authentication settings.
+2. For a **new, empty application schema**, run the complete [supabase/schema.sql](supabase/schema.sql) in SQL Editor. It contains all tables, constraints, indexes, grants, RLS policies, functions, and triggers. The existing live project is already installed; do not rerun it there.
+3. In Realtime settings, disable **Allow public access**. The app uses private Broadcast channels; application tables do not need Postgres Changes publication.
+4. Add `http://localhost:5173/**` to Authentication's allowed Redirect URLs. A new local-only project can use `http://localhost:5173/` as its Site URL; retain the production Site URL when sharing the deployed project's database.
+5. Keep Supabase's native confirmation rules as configured. Guest registration links email to the existing guest and sets a password after verification. Check native email delivery/SMTP settings if confirmation or recovery links do not arrive.
 
 ```bash
 npm run dev
 ```
 
-Vite normally serves the app at `http://localhost:5173`.
+Open `http://localhost:5173` (or the port Vite reports). Only browser-safe project values belong in `VITE_*` variables; they are compiled into public JavaScript. Keep `.env.local` and privileged credentials out of Git.
 
-## Verification commands
+## Checks
 
 ```bash
 npm run lint
-npm test
+npm test -- --maxWorkers=2
 npm run build
 npm run preview
 ```
 
-The automated suite covers native Auth/callback behavior with mocks, group/invitation HTTP contracts, identity/group state isolation, access-loss and draft guards, task/comments/activity/label behavior, filters, dates, summaries, and rollback. Phase 18 additionally ran 179 real guest JWT/API/Realtime assertions with one explicitly skipped hosted conflict check. See [results, the opt-in API runner, and remaining acceptance](docs/phase18-verification.md); real email delivery, registered-user API repetition, and browser appearance remain open.
+Tests live alongside their source. The recorded baseline passed 187 frontend tests, lint, and the production build. The native guest/API/Realtime suite passed 189 assertions, including HTTP 409 conflicts, access isolation, trusted history, and cleanup. Production sign-in, persistence after refresh, and recovery are user-confirmed. Registered-user API repetition and broader browser/mobile acceptance were deferred; they are not reported as passes.
 
-## Manual security verification
+The optional native suite targets an explicitly named Supabase project:
 
-Use two independent browser profiles so Supabase creates Guest A and Guest B.
+```bash
+npm run test:api -- --project your-project-ref
+```
 
-1. Check private-group isolation, then invite B to a shared group from A's Members page.
-2. Confirm B has no board access until B accepts in Invitations.
-3. After Phase 17 setup, create/edit/assign/comment as both accounts and check automatic updates; manual refresh remains available.
-4. Register A's guest, complete native email/password setup, and confirm its UUID/work/memberships remain.
-5. Test account/group switching, drafts, recovery, ownership transfer, and removal while a detail is open.
+It creates four temporary guest accounts and six test groups using the public values in `.env.local`. It removes its groups and signs out in `finally`, then prints the path to a guarded account-cleanup SQL file under `.tmp/`. Run that exact cleanup file in SQL Editor to remove the four temporary Auth accounts. The manifest stores fixture IDs and statuses, not tokens. This suite is separate from normal unit tests; use a disposable project when possible.
 
-Follow the [complete manual review checklist](docs/accounts-and-groups.md#manual-review-checkpoint).
+## Deploy to Vercel
 
-Register an anonymous guest before signing out or clearing browser storage to retain access from another browser. Signing into an existing account deliberately switches identity and does not merge guest work.
+Import the GitHub repository into Vercel. `vercel.json` selects Vite, `npm ci`, `npm run build`, and `dist` output. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` before deploying; changes to them require a new build. GitHub Actions runs lint, tests, and the production build.
 
-## Deploying to Vercel
+For the current production app, set the Supabase **Site URL** to:
 
-The repository includes a minimal `vercel.json` for Vite, `npm ci`, `npm run build`, and `dist`. Follow the [deployment guide](docs/vercel-deployment.md) for the exact dashboard settings, environment variables, and Supabase production callback URLs.
+```text
+https://northstar-six-zeta.vercel.app/
+```
 
-1. Push the repository to GitHub.
-2. Import the repository into Vercel.
-3. Confirm the build command is `npm run build` and the output directory is `dist`.
-4. Add both public variables in Project Settings → Environment Variables:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_PUBLISHABLE_KEY`
-5. Apply them to Production and Preview as appropriate.
-6. Add the deployed Auth callback URLs, then test login, registration, recovery, accepted membership, task persistence, and isolation on that URL.
+Add these **Redirect URLs**, retaining localhost entries for development:
 
-`VITE_*` variables are compiled into the browser bundle and are therefore public configuration. Vercel treats public-prefixed variables as Config values; do not use them for privileged credentials. Environment-variable changes require a new deployment.
+```text
+https://northstar-six-zeta.vercel.app/
+https://northstar-six-zeta.vercel.app/?view=account&auth=upgrade
+https://northstar-six-zeta.vercel.app/?view=account&auth=recovery
+```
 
-The included [GitHub Actions workflow](.github/workflows/ci.yml) runs `npm ci`, linting, tests, and the production build. With Vercel's Git integration, use the workflow as a required check while Vercel handles preview and production deployments.
+The app builds callbacks from the current browser origin. A localhost guest session does not automatically transfer to the production origin: register the guest, then sign in with that account on the hosted app.
 
-## Project structure
+## Structure and data model
 
 ```text
 src/
-  app/              Application shell, navigation, and workspace coordination
-  features/
-    auth/           Native sessions, PKCE callbacks, guest conversion, and recovery
-    account/        Profile and account forms/services
-    groups/         Groups, memberships, invitations, ownership, and scoped state
-    live/           Private channels, refresh queue, recovery hooks, and connection status
-    board/          Board layout, filters, summary, and loading/empty states
-    tasks/          Task forms, cards, details, hooks, services, and stores
-    team/           Real-account avatars and assignee controls
-    labels/         Label management, chips, and tagging controls
-    comments/       Comment list, composer, and persistence
-    activity/       Activity rendering, formatting, and validation
-    workspace/      Shared member/label lookup state
-  shared/           Reusable controls, hooks, data helpers, and generated DB types
-  styles/           Ordered CSS modules for foundations, features, and responsiveness
-  test/             Shared test setup and fixtures
+  app/                   Application shell, navigation, and coordination
+  features/              Auth, accounts, groups, board, tasks, labels, discussion, live updates
+  shared/                Common controls, hooks, services, state, and generated types
+  styles/                Small CSS files organized by feature and responsiveness
+  test/                  Shared test setup and fixtures
 supabase/
-  schema.sql        Schema, grants, triggers, and RLS policies
+  schema.sql             Complete fresh-install application schema
+  tests/api/             Optional native API/Realtime security checks
+deliverables/
+  GiaHuy_Pham_task_manager_assessment.pdf
 ```
 
-Edit source files under `src/`. `npm run build` regenerates `dist/` with hashed bundles. Tests live alongside the code they exercise. See [the architecture guide](docs/architecture.md) for file locations and CSS import rules.
+Supabase manages Auth identities. Public profiles provide unique usernames, names, and colors; group memberships determine access. Groups own tasks, labels, assignments, comments, and activity. Members share task editing and invitations; the owner controls removal, ownership transfer, and deletion. Only accepted active members can be assigned tasks. Pending invitations expose a minimal preview without board access.
 
-## Design decisions
+RLS controls reads, self-profile edits expose only editable fields, and checked RPCs perform other writes atomically. Composite foreign keys reject relationships across groups. Exact revision timestamps prevent lost updates; activity comes from committed database changes. Saved author/actor names survive renames and non-owner account deletion. Task/group deletion cascades to dependent content; member departure clears assignments while retaining shared work.
 
-- Guest entry removes signup friction; native registration preserves its UUID and group work.
-- RLS is the security boundary; client-side filtering is only a usability aid.
-- Status changes save immediately after a drop and roll back if persistence fails.
-- Manual ordering within a column is intentionally excluded; tasks use stable creation-time ordering.
-- Search and summary values are derived from loaded state, so filtering never mutates hidden tasks.
-- Due dates are parsed as local calendar dates to avoid timezone-related day shifts.
+Edit `src/` for the app and `supabase/schema.sql` as the fresh-install database definition. `dist/` is generated by the build. This README and the schema contain the current setup; historical roadmaps, migration snapshots, reset scripts, and duplicate schema generators have been removed. Future changes to an existing database need a deliberate additive upgrade; reinstalling the clean schema is not a deployment or rollback procedure.
 
-## Known limitations
+## Tradeoffs and limitations
 
-- Anonymous accounts cannot be recovered after their browser session is lost.
-- Dragging changes task status but does not persist arbitrary ordering within a column.
-- Live updates require the Phase 17 SQL and private-channel setup. Background reconciliation repairs missed notifications; offline changes cannot sync until connectivity returns.
-
-## Future improvements
-
-- Apply the Phase 18 SQL fix and complete real HTTP conflict verification
-- Complete registered-user, email, and real-browser multi-user acceptance checks
-- Add persistent within-column ordering
-- Add end-to-end browser tests against a disposable Supabase project
+- A guest cannot recover its identity after losing the browser session unless it registered first. Signing into another account switches identities without merging guest work.
+- Dragging changes status; arbitrary ordering within a column is not persisted.
+- Filters/statistics use the loaded group board. Larger datasets would benefit from server-side search, paging, and aggregates.
+- Private live hints trigger authoritative refetches; offline writes retain drafts but are not queued for automatic synchronization.
+- Initials/color avatars and in-app invitations are implemented. Image uploads, attachments, OAuth, and invitation emails are future additions.
+- The recorded review leaves leaked-password protection disabled and a development-only minimatch advisory for follow-up. The last production-dependency audit found no vulnerabilities.
